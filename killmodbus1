@@ -1,0 +1,3 @@
+echo "cbipa55word" | sudo -S killall modbuss1.1
+
+

@@ -1,0 +1,12 @@
+#Don't move this structured
+#Configuration MYSQL (AQMS)
+
+0.hostname=localhost
+1.username=root
+2.password=
+3.database_name=wqms_onlimo
+4.port(default)=0
+5.socket_name=/var/run/mysqld/mysqld.sock
+6.flags=0
+
+

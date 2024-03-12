@@ -1,0 +1,1 @@
+Ltd FT232 Serial (UART) IC

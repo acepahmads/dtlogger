@@ -1,0 +1,8 @@
+killmodbus
+echo "cbipa55word" | sudo -S /dtlogger/modbuss1.1 2024 1000000 & >/dev/null
+echo "cbipa55word" | sudo -S /dtlogger/dbprocessmodbuss1.1 & >/dev/null
+echo "cbipa55word" | sudo -S /dtlogger/logmodbuss1.1 & >/dev/null
+echo "cbipa55word" | sudo -S /dtlogger/autoresetusb & >/dev/null
+gnome-terminal -x /dtlogger/echomodbuss1.0 & >/dev/null
+firefox & >/dev/null
+
