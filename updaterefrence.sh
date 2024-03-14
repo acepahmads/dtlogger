@@ -38,3 +38,4 @@ cd ~/.config
 mkdir -p autostart
 cp -f ~/dtlogger/rundbprocess.desktop ~/.config/autostart
 cp -f ~/dtlogger/models.py ~/app/instrumen/datalogger/models/
+
