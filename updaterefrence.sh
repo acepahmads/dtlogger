@@ -39,6 +39,7 @@ mkdir -p $dtlogger
 cd $dtlogger
 git clone "https://${token}@github.com/acepahmads/dtlogger.git"
 git checkout "${branch}"
+echo "$password" | sudo -S chmod +x /$folder/*
 cd ~/.config
 mkdir -p autostart
 cp -f ~/dtlogger/rundbprocess.desktop ~/.config/autostart
