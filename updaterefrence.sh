@@ -33,7 +33,7 @@ rm -fr dtlogger
 git clone "https://${token}@github.com/acepahmads/dtlogger.git"
 cd dtlogger
 git checkout "${branch}"
-printf "change permissions\n"
+printf "change permission\n"
 echo "$password" | sudo -S chmod +x *
 echo "$password" | sudo -S ln -fs ~/dtlogger/rundbprocess /bin/rundbprocess
 echo "$password" | sudo -S ln -fs ~/dtlogger/killdbprocess /bin/killdbprocess
