@@ -1,0 +1,2 @@
+killdbprocess
+echo "cbipa55word" | sudo -S /dtlogger/dbprocesstrigger1.1 & >/dev/null
