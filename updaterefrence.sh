@@ -29,6 +29,7 @@ then
 fi
 
 git clone "https://${token}@github.com/acepahmads/dtlogger.git"
+cd dtlogger
 git checkout "${branch}"
 echo "$password" | sudo -S chmod +x /$folder/*
 cd ~/.config
