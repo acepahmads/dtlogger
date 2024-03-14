@@ -33,7 +33,8 @@ rm -fr dtlogger
 git clone "https://${token}@github.com/acepahmads/dtlogger.git"
 cd dtlogger
 git checkout "${branch}"
-echo "$password" | sudo -S chmod +x /$folder/*
+echo "$password" | sudo -S chmod +x *
+echo "$password" | sudo -S ln -s rundbprocess /bin/rundbprocess
 cd ~/.config
 mkdir -p autostart
 cp -f ~/dtlogger/rundbprocess.desktop ~/.config/autostart
