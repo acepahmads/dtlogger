@@ -34,9 +34,6 @@ then
   dtlogger="dtlogger"
 fi
 
-rm -Rf $dtlogger
-mkdir -p $dtlogger
-cd $dtlogger
 git clone "https://${token}@github.com/acepahmads/dtlogger.git"
 git checkout "${branch}"
 echo "$password" | sudo -S chmod +x /$folder/*
