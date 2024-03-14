@@ -33,6 +33,7 @@ rm -fr dtlogger
 git clone "https://${token}@github.com/acepahmads/dtlogger.git"
 cd dtlogger
 git checkout "${branch}"
+printf "change permissions\n"
 echo "$password" | sudo -S chmod +x *
 echo "$password" | sudo -S ln -s rundbprocess /bin/rundbprocess
 cd ~/.config
