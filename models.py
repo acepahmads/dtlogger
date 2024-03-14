@@ -723,7 +723,6 @@ class Job(models.Model):
         apisecret = Config.value_by_key("KLHK_APISECRET")
         station = Config.value_by_key("KLHK_STATION")
         params = eval(Config.value_by_key("KLHK_PARAMS"))
-
         request = requests.post(url, json = params)
         if request.status_code == 200:
           refrence.uploaded_klhk = "3"
@@ -733,6 +732,7 @@ class Job(models.Model):
           refrence.uploaded_klhk = "4"
           refrence.save()
           print("[Send KLHK] Finish", refrence.identifier, "failed with response", request.json())
+        print("param",params)
         refrence_klhk_ready = Refrence.klhk_ready()
         time.sleep(0.2)
         counter+=1
