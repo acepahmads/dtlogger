@@ -36,6 +36,8 @@ git checkout "${branch}"
 printf "change permissions\n"
 echo "$password" | sudo -S chmod +x *
 echo "$password" | sudo -S ln -fs ~/dtlogger/rundbprocess /bin/rundbprocess
+echo "$password" | sudo -S ln -fs ~/dtlogger/killdbprocess /bin/killdbprocess
+echo "$password" | sudo -S ln -fs ~/dtlogger/checkdb /bin/checkdb
 cd ~/.config
 mkdir -p autostart
 cp -f ~/dtlogger/rundbprocess.desktop ~/.config/autostart
