@@ -28,6 +28,8 @@ then
   password="cbipa55word"
 fi
 
+cd ~
+rm -fr dtlogger
 git clone "https://${token}@github.com/acepahmads/dtlogger.git"
 cd dtlogger
 git checkout "${branch}"
