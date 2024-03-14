@@ -35,7 +35,7 @@ cd dtlogger
 git checkout "${branch}"
 printf "change permissions\n"
 echo "$password" | sudo -S chmod +x *
-echo "$password" | sudo -S ln -s rundbprocess /bin/rundbprocess
+echo "$password" | sudo -S ln -fs ~/dtlogger/rundbprocess /bin/rundbprocess
 cd ~/.config
 mkdir -p autostart
 cp -f ~/dtlogger/rundbprocess.desktop ~/.config/autostart
