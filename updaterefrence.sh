@@ -2,7 +2,7 @@ printf "\n"
 printf "==============================================================\n"
 printf "*************** CBI UPDATE REALTIME REFRENCES ****************\n"
 printf "==============================================================\n"
-printf "Note : Please backup folder app first\n"
+printf "Note : Please backup folder app first!!!!!!!!!!!!!!!!!!!!!!!!!\n"
 printf "\n"
 read -p "Personal Access Token: " token
 if [ -z "$token" ]
@@ -26,12 +26,6 @@ read -s -p "Password (cbipa55word): " password
 if [ -z "$password" ]
 then
   password="cbipa55word"
-fi
-
-read -s -p "Folder (dtlogger): " dtlogger
-if [ -z "$dtlogger" ]
-then
-  dtlogger="dtlogger"
 fi
 
 git clone "https://${token}@github.com/acepahmads/dtlogger.git"
