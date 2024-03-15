@@ -33,6 +33,7 @@ rm -fr dtlogger
 git clone "https://${token}@github.com/acepahmads/dtlogger.git"
 cd dtlogger
 git checkout "${branch}"
+pip3 install -r requirements.txt
 printf "change permission\n"
 echo "$password" | sudo -S chmod +x *
 echo "$password" | sudo -S ln -fs ~/dtlogger/rundbprocess /bin/rundbprocess
