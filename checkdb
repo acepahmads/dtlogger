@@ -1,1 +1,2 @@
 ps -e | grep dbprocess
+ps aux | grep warning
