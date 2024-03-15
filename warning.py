@@ -51,7 +51,7 @@ def getdata(fromd, to, value):
         #message waiting checking
         sql_select_Query = (f"SELECT datalogger_refrences.identifier FROM datalogger_refrences where datalogger_refrences.created_at between '{fromd}' and '{to}' and uploaded_klhk != '3' order by datalogger_refrences.id desc")
         print(sql_select_Query)
-        cursor = connection.cursor()
+        #cursor = connection.cursor()
         cursor.execute(sql_select_Query)
         # get all records
         records = cursor.fetchall()
@@ -64,7 +64,7 @@ def getdata(fromd, to, value):
         #generate refrence checking
         sql_select_Query = (f"SELECT datalogger_refrences.identifier FROM datalogger_refrences where datalogger_refrences.created_at between '{fromd}' and '{to}' order by datalogger_refrences.id desc")
         print(sql_select_Query)
-        cursor = connection.cursor()
+        #cursor = connection.cursor()
         cursor.execute(sql_select_Query)
         # get all records
         records = cursor.fetchall()
@@ -74,14 +74,13 @@ def getdata(fromd, to, value):
             message = f"{value} [{now}] : The system did not generate reference today"
             send_warning_tele(message)
 
-
-    except mysql.connector.Error as e:
-        print("Error reading data from MySQL table", e)
-    finally:
         if connection.is_connected():
             connection.close()
             cursor.close()
             print("MySQL connection is closed")
+
+    except mysql.connector.Error as e:
+        print("Error reading data from MySQL table", e)
 
 
 def main(value):
@@ -103,6 +102,6 @@ if __name__ == "__main__":
     if len(sys.argv) > 1:
         main(sys.argv[1])
     else:
-        print("Tidak ada argumen yang diberikan.")
+        print("invalid argument")
 
 
