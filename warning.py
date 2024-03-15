@@ -1,16 +1,8 @@
 import sys
 import time
-
 import requests
 import datetime
-import asyncio
-import websockets
-import json
 import mysql.connector
-import numpy as np
-import struct
-import socket
-import select
 
 def send_telegram_message(bot_token, chat_id, message):
     url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
