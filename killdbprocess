@@ -1,1 +1,2 @@
+pkill -f warning.py
 echo "cbipa55word" | sudo -S killall dbprocesstrigger1.1
