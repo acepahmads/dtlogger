@@ -1,4 +1,4 @@
 killdbprocess
 cd ~/dtlogger
-echo "cbipa55word" | sudo -S python3 warning.py & >/dev/null
+python3 warning.py & >/dev/null
 echo "cbipa55word" | sudo -S ./dbprocesstrigger1.1 & >/dev/null
