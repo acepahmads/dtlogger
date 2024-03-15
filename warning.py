@@ -87,7 +87,7 @@ def main(value):
     while (True):
         now = datetime.datetime.now()
         print(now)
-        if (now.second == 0):
+        if (now.minute == 0):
             print("minute 0")
             one_hour = datetime.timedelta(hours=1)
             one_hour_ago = now - one_hour
