@@ -1,0 +1,2 @@
+killwarning
+echo "cbipa55word" | sudo -S python3 /home/cbi/dtlogger/warning.py & >/dev/null
