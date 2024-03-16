@@ -29,8 +29,8 @@ def getdata(fromd, to, value):
 
         #data transmission completeness checking
         now = datetime.datetime.now()
-        startday = (str(now.date()) + " 00:00:00")
-        startday = datetime.datetime.strptime(startday, "%Y-%m-%d %H:%M:%S")
+        startday1 = fromd
+        startday = datetime.datetime.strptime(startday1, "%Y-%m-%d %H:%M:%S")
         duration = now - startday
         times = int(duration.seconds / 3600) - 1
         if (times < 0):
