@@ -45,7 +45,7 @@ def getdata(fromd, to, value):
         rows = cursor.rowcount
         print("data transmission completeness checking : ", rows)
         if (rows < times):
-            message = f"{value} [{now}] : incomplete send message(s) until now"
+            message = f"{value} [{to}] : incomplete send message(s) until now"
             send_warning_tele(message)
 
         #message waiting checking
@@ -58,7 +58,7 @@ def getdata(fromd, to, value):
         rows = cursor.rowcount
         print("message waiting checking : ", rows)
         if (rows > 0):
-            message = f"{value} [{now}] : {records} message(s) waiting/failed to KLHK today"
+            message = f"{value} [{to}] : {records} message(s) waiting/failed to KLHK today"
             send_warning_tele(message)
 
         #generate refrence checking
@@ -71,7 +71,7 @@ def getdata(fromd, to, value):
         rows = cursor.rowcount
         print("generate refrence checking : ", rows)
         if (rows == 0):
-            message = f"{value} [{now}] : The system did not generate reference today"
+            message = f"{value} [{to}] : The system did not generate reference today"
             send_warning_tele(message)
 
         if connection.is_connected():
@@ -89,9 +89,9 @@ def main(value):
         print(now)
         if ((now.minute == 0) and (now.second == 0)):
             print("minute 0")
-            one_hour = datetime.timedelta(hours=2)
-            one_hour_ago = now - (one_hour * 2)
-            fromd1 = one_hour_ago.strftime("%Y-%m-%d")
+            two_hour = datetime.timedelta(hours=2)
+            two_hour_ago = now - two_hour
+            fromd1 = two_hour_ago.strftime("%Y-%m-%d")
             fromd = str(fromd1) + " 00:00:00"
             print("from", fromd)
 
