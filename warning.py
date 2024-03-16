@@ -58,7 +58,7 @@ def getdata(fromd, to, value):
         rows = cursor.rowcount
         print("message waiting checking : ", rows)
         if (rows > 0):
-            message = f"{value} [{to}] : {records} message(s) waiting/failed to KLHK today"
+            message = f"{value} [{to}] : {rows} message(s) waiting/failed to KLHK today"
             send_warning_tele(message)
 
         #generate refrence checking
