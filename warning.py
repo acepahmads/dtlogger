@@ -89,12 +89,18 @@ def main(value):
         print(now)
         if ((now.minute == 0) and (now.second == 0)):
             print("minute 0")
+            one_hour = datetime.timedelta(hours=2)
+            one_hour_ago = now - (one_hour * 2)
+            fromd1 = one_hour_ago.strftime("%Y-%m-%d")
+            fromd = str(fromd1) + " 00:00:00"
+            print("from", fromd)
+
             one_hour = datetime.timedelta(hours=1)
             one_hour_ago = now - one_hour
-            formatted_time = one_hour_ago.strftime("%Y-%m-%d %H:%M")
-            print("one hour ago", one_hour_ago)
-            fromd = str(now.date()) + " 00:00:00"
-            to = one_hour_ago
+            to1 = one_hour_ago.strftime("%Y-%m-%d %H:%M")
+            to = str(to1) + ":00"
+            print("to", to)
+
             getdata(fromd, to, value)
         time.sleep(1)
 
