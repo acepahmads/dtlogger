@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Exec=runmodbus
+Hidden=false
+NoDisplay=false
+X-GNOME-Autostart-enabled=true
+Name[en_US]=runmodbus
+Name=runmodbus
+Comment[en_US]=
+Comment=
