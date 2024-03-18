@@ -3,4 +3,5 @@ echo "cbipa55word" | sudo -S killall dbprocesstrigger1.1
 echo "cbipa55word" | sudo -S killall logmodbuss1.1
 echo "cbipa55word" | sudo -S killall autoresetusb
 echo "cbipa55word" | sudo -S killall formulaproc1.0
+echo "cbipa55word" | sudo -S killall inputaqms1.1
 pkill -f warning.py
