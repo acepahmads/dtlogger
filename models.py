@@ -326,6 +326,7 @@ class Parameter(models.Model):
         #client = AppHelper.modbus_connection(connection)
         #client.connect()
         for key in keys:
+          print("read values", key)
           results.append(Parameter.read_value(connection["id"], key))
         #client.close()
       except Exception as error:
@@ -651,6 +652,7 @@ class Value(models.Model):
       results = []
       refrence = Refrence.last_refrence()
       for key in keys:
+        print("save values",[key])
         parameter_values = Parameter.read_values([key])
         parameter = Parameter.objects.get(key=key)
         parameter_value = float(parameter_values[0]["value"])
