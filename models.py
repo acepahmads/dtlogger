@@ -4,100 +4,19 @@ import time
 import logging
 import requests
 import channels.layers
+import socket
+import select
 from os import environ as Env
 from datetime import datetime
 from django.db import models, connection
 from django.apps import apps
-from pymodbus.client.sync import ModbusSerialClient
 from pymodbus.payload import BinaryPayloadDecoder, BinaryPayloadBuilder
 from pymodbus.constants import Endian
 from asgiref.sync import async_to_sync
-from datalogger.models.enums import Statuses
+from .enums import Statuses, Methods, Bytesizes, Parities, Stopbits, FunctionCodes, Outputs, DecodeOrders, DisplayTypes, IntegrationStatuses
+from .helpers import AppHelper
 
 logger = logging.getLogger("app")
-
-class Helper():
-  def fetchall(cursor):
-    try:
-        columns = [col[0] for col in cursor.description]
-        return [
-            dict(zip(columns, row))
-            for row in cursor.fetchall()
-        ]
-    except:
-        return []
-  def fetchone(cursor):
-    try:
-        columns = [col[0] for col in cursor.description]
-        return dict(zip(columns, cursor.fetchone()))
-    except:
-        return {}
-  def label(class_enum, value):
-    try:
-      return dict(class_enum.choices)[str(value)]
-    except:
-        return ""
-  def modbus_connection(config):
-    try:
-      method = Helper.label(Methods, config["method"])
-      port = config["port"]
-      baudrate = config["baudrate"]
-      parity = config["parity"]
-      stopbits = int(config["stopbits"])
-      bytesize = int(config["bytesize"])
-      timeout = float(config["timeout"])
-      return ModbusSerialClient(method = method, port = port, baudrate = baudrate, parity = parity, stopbits = stopbits, bytesize = bytesize, timeout = timeout)
-    except:
-      return {}
-  def is_empty(value):
-    return value != None or value != ""
-  def is_present(value):
-    return value != None and value != ""
-
-class Methods(models.TextChoices):
-  RTU = "1", "rtu"
-  ASCII = "2", "ascii"
-
-class Bytesizes(models.TextChoices):
-  FIVEBITS = "5", "FIVEBITS"
-  SIXBITS = "6", "SIXBITS"
-  SEVENBITS = "7", "SEVENBITS"
-  EIGHTBITS = "8", "EIGHTBITS"
-
-class Parities(models.TextChoices):
-  PARITY_NONE = "N", "PARITY_NONE"
-  PARITY_EVEN = "E", "PARITY_EVEN"
-  PARITY_ODD = "O", "PARITY_ODD"
-  PARITY_MARK = "M", "PARITY_MARK"
-  PARITY_SPACE = "S", "PARITY_SPACE"
-
-class Stopbits(models.TextChoices):
-  STOPBITS_ONE = "1", "STOPBITS_ONE"
-  STOPBITS_ONE_POINT_FIVE = "1.5", "STOPBITS_ONE_POINT_FIVE"
-  STOPBITS_TWO = "2", "STOPBITS_TWO"
-
-class FunctionCodes(models.TextChoices):
-  READ_HOLDING_REGISTERS = "03", "03 | Read Holding Registers"
-  READ_INPUT_REGISTERS = "04", "04 | Read Input Registers"
-  WRITE_REGISTER = "06", "06 | Write Single Register"
-
-class Outputs(models.TextChoices):
-  READ_VALUE = "1", "Value / Float"
-  READ_STATUS = "2", "Status / Indicator"
-
-class DecodeOrders(models.TextChoices):
-  ENDIAN_BIG = "1", "Endian.Big"
-  ENDIAN_LITTLE = "2", "Endian.Little"
-
-class DisplayTypes(models.TextChoices):
-  VALUE = "1", "Value"
-  STATUS = "2", "Status"
-
-class IntegrationStatuses(models.TextChoices):
-  WAITING = "1", "Waiting"
-  INPROGRESS = "2", "In Progress"
-  SUCCESSFUL = "3", "Successful"
-  FAILED = "4", "Failed"
 
 class Config(models.Model):
   key = models.CharField(max_length=255, unique=True)
@@ -177,7 +96,7 @@ class Connection(models.Model):
     try:
       cursor = connection.cursor()
       cursor.execute('SELECT dc.id AS id, dc.method AS method, dc.port AS port, dc.baudrate AS baudrate, dc.bytesize AS bytesize, dc.parity AS parity, dc.stopbits AS stopbits, dc.timeout AS timeout FROM datalogger_connections dc, datalogger_sensors ds, datalogger_parameters dp WHERE dc.id = ds.connection_id AND ds.id = dp.sensor_id AND dc.status = 1 AND dp.key IN %(keys)s GROUP BY dc.id;', {'keys': tuple(keys)})
-      result = Helper.fetchall(cursor)
+      result = AppHelper.fetchall(cursor)
       return result
     except:
       []
@@ -185,7 +104,7 @@ class Connection(models.Model):
     try:
       cursor = connection.cursor()
       cursor.execute('SELECT dc.id AS id, dc.method AS method, dc.port AS port, dc.baudrate AS baudrate, dc.bytesize AS bytesize, dc.parity AS parity, dc.stopbits AS stopbits, dc.timeout AS timeout FROM datalogger_connections dc, datalogger_sensors ds, datalogger_parameters dp WHERE dc.id = ds.connection_id AND ds.id = dp.sensor_id AND dc.status = 1 AND dp.key = %(key)s GROUP BY dc.id LIMIT 1;', {'key': key})
-      result = Helper.fetchone(cursor)
+      result = AppHelper.fetchone(cursor)
       return result
     except:
       {}
@@ -233,11 +152,49 @@ class Parameter(models.Model):
     db_table = "datalogger_parameters"
   def __str__(self):
     return self.name
+
+  def send_udp(message,parameter):
+    try:
+     UDP_IP = "127.0.0.1"
+     UDP_PORT = 2024
+     status = False
+     #print("send message: %s" % message)
+     #print("request")
+     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+     message1=bytes(message,'ascii')
+     sock.sendto(message1, (UDP_IP, UDP_PORT))
+     sock.setblocking(0)
+     ready = select.select([sock], [], [], 2)
+     value="0"
+     if ready[0]:
+      value, addr = sock.recvfrom(1024) # buffer size is 1024 bytes
+      if parameter["output"] == "2":
+       status = True
+      #print("rcv data",data)
+     sock.close()
+    except socket.error:
+     []
+    return [value, status];
+  def recv_udp():
+    UDP_IP = "127.0.0.1"
+    UDP_PORT = 2025
+    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    sock.bind((UDP_IP, UDP_PORT))
+    sock.setblocking(0)
+    ready = select.select([sock], [], [], 5)
+    data=0
+    print("ready to recv")
+    if ready[0]:
+     data, addr = sock.recvfrom(1024) # buffer size is 1024 bytes
+     print("recv " % data)
+    sock.close()
+    return data
+
   def config_write(connection_id, key):
     try:
       cursor = connection.cursor()
       cursor.execute('SELECT dp.address as address, dp.data_type as data_type, ds.uid as uid, CONCAT("write", " ", ds.key, "#", dp.key) as keyid FROM datalogger_sensors ds, datalogger_parameters dp WHERE dp.sensor_id = ds.id AND ds.connection_id = %(connection_id)s AND dp.key = %(key)s LIMIT 1;', {"connection_id": connection_id, "key": key})
-      result = Helper.fetchone(cursor)
+      result = AppHelper.fetchone(cursor)
       return result
     except:
       []
@@ -245,7 +202,7 @@ class Parameter(models.Model):
     try:
       cursor = connection.cursor()
       cursor.execute('SELECT CONCAT(dc.key, "-uid", ds.uid, "-address", dp.address, "-", "status", dc.id, ds.id, dp.id) as id, CONCAT("status", " ", ds.key, "#", dp.key) as keyid, dp.address as address, dp.decode_value as decode_value, dp.data_type as data_type, dp.byteorder as byteorder, dp.wordorder as wordorder, dp.min_value as min_value, dp.max_value as max_value, dp.factor as factor, dp.formula as formula, ds.uid as uid, dp.function_code as function_code, dp.output as output FROM datalogger_components dc, datalogger_items di, datalogger_sensors ds, datalogger_parameters dp WHERE dc.id = di.component_id AND di.parameter_id = dp.id AND dp.sensor_id = ds.id AND di.displayed = "2" AND ds.connection_id = %(connection_id)s AND dp.key = %(key)s LIMIT 1;', {"connection_id": connection_id, "key": key})
-      result = Helper.fetchone(cursor)
+      result = AppHelper.fetchone(cursor)
       return result
     except:
       []
@@ -253,7 +210,7 @@ class Parameter(models.Model):
     try:
       cursor = connection.cursor()
       cursor.execute('SELECT CONCAT(dc.key, "-uid", ds.uid, "-address", dp.address, "-", "value", dc.id, ds.id, dp.id) as id, CONCAT("value", " ", ds.key, "#", dp.key) as keyid, dp.address as address, dp.decode_value as decode_value, dp.data_type as data_type, dp.byteorder as byteorder, dp.wordorder as wordorder, dp.min_value as min_value, dp.max_value as max_value, dp.disabled_threshold as disabled_threshold, dp.factor as factor, dp.formula as formula, dp.orchestrator_factor as orchestrator_factor, dp.orchestrator_reduction as orchestrator_reduction, ds.uid as uid, dp.function_code as function_code, dp.output as output FROM datalogger_components dc, datalogger_items di, datalogger_sensors ds, datalogger_parameters dp WHERE dc.id = di.component_id AND di.parameter_id = dp.id AND dp.sensor_id = ds.id AND di.displayed = "1" AND ds.connection_id = %(connection_id)s AND dp.key = %(key)s LIMIT 1;', {"connection_id": connection_id, "key": key})
-      result = Helper.fetchone(cursor)
+      result = AppHelper.fetchone(cursor)
       return result
     except:
       []
@@ -261,7 +218,7 @@ class Parameter(models.Model):
     try:
       cursor = connection.cursor()
       cursor.execute('SELECT dp.key, dp.name FROM datalogger_parameters dp WHERE dp.status = "1" AND dp.function_code in ("03", "04") AND dp.output = "1" AND dp.enable_orchestrator_calibration = TRUE')
-      result = Helper.fetchall(cursor)
+      result = AppHelper.fetchall(cursor)
       return result
     except:
       []
@@ -269,7 +226,7 @@ class Parameter(models.Model):
     try:
       cursor = connection.cursor()
       cursor.execute('SELECT dp.key, dp.name, dp.enable_orchestrator_zeroing, dp.orchestrator_factor FROM datalogger_parameters dp WHERE dp.status = "1" AND dp.function_code in ("03", "04") AND dp.output = "1" AND dp.enable_orchestrator_calibration = TRUE AND dp.key = %(key)s LIMIT 1;', {"key": key})
-      result = Helper.fetchone(cursor)
+      result = AppHelper.fetchone(cursor)
       return result
     except:
       {}
@@ -277,19 +234,23 @@ class Parameter(models.Model):
     results = []
     for connection in Connection.by_parameter_keys(keys):
       try:
-        client = Helper.modbus_connection(connection)
-        client.connect()
+        #client = AppHelper.modbus_connection(connection)
+        #client.connect()
         for key in keys:
-          results.append(Parameter.write(client, connection["id"], key))
-        client.close()
+          results.append(Parameter.write(connection["id"], key))
+        #client.close()
       except Exception as error:
         print("[ERROR] client write :", error)
     return results
-  def write(client, connection_id, key):
+  def write(connection_id, key):
     parameter = Parameter.config_write(connection_id, key)
     if parameter != {}:
       try:
-        client.write_register(parameter["address"], parameter["data_type"], unit = parameter["uid"])
+        #client.write_register(parameter["address"], parameter["data_type"], unit = parameter["uid"])
+        print("write",key)
+        sQuery = "select * from datalogger_parameters where datalogger_parameters.key='"+key+"'"
+        #print("sQuery:",sQuery)
+        Parameter.send_udp(sQuery,parameter)
         time.sleep(0.1)
         write_status = True
       except Exception as error:
@@ -308,19 +269,20 @@ class Parameter(models.Model):
       }
 
     return result
+
   def read_statuses(keys):
     results = []
     for connection in Connection.by_parameter_keys(keys):
       try:
-        client = Helper.modbus_connection(connection)
-        client.connect()
+        #client = AppHelper.modbus_connection(connection)
+        #client.connect()
         for key in keys:
-          results.append(Parameter.read_status(client, connection["id"], key))
-        client.close()
+          results.append(Parameter.read_status(connection["id"], key))
+        #client.close()
       except Exception as error:
         print("[ERROR] client read status :", error)
     return results
-  def read_status(client, connection_id, key):
+  def read_status(connection_id, key):
     parameter = Parameter.config_status(connection_id, key)
     result_status = "off"
 
@@ -328,7 +290,10 @@ class Parameter(models.Model):
       channel_layer = channels.layers.get_channel_layer()
 
       try:
-        read = Parameter.read_parameter(client, parameter)
+        #read = Parameter.read_parameter(client, parameter)
+        sQuery = "select * from datalogger_parameters where datalogger_parameters.key='"+key+"'"
+        #print("sQuery:",sQuery)
+        read=Parameter.send_udp(sQuery,parameter)
         value = read[0]
         status = read[1]
 
@@ -358,24 +323,31 @@ class Parameter(models.Model):
     results = []
     for connection in Connection.by_parameter_keys(keys):
       try:
-        client = Helper.modbus_connection(connection)
-        client.connect()
+        #client = AppHelper.modbus_connection(connection)
+        #client.connect()
         for key in keys:
-          results.append(Parameter.read_value(client, connection["id"], key))
-        client.close()
+          results.append(Parameter.read_value(connection["id"], key))
+        #client.close()
       except Exception as error:
-        print("[ERROR] client read value :", error)
+        print("[ERROR] client read values :", error)
     return results
-  def read_value(client, connection_id, key):
+  def read_value(connection_id, key):
     is_threshold_value = False
     parameter = Parameter.config_value(connection_id, key)
-
+    #print("read value p")
     if parameter != {}:
       channel_layer = channels.layers.get_channel_layer()
-
+      raw_value=0
       try:
-        read = Parameter.read_parameter(client, parameter)
-        value = read[0]
+        #print("parameter:",parameter)
+        #read = Parameter.read_parameter(parameter)
+        sQuery = "select * from datalogger_parameters where datalogger_parameters.key='"+key+"'"
+        #print("sQuery:",sQuery)
+        read=Parameter.send_udp(sQuery,parameter)
+        #datar=Parameter.recv_udp()
+        #print("data:",data)
+        raw_value=float(read[0])
+        value = raw_value
         value = value - float(parameter["orchestrator_reduction"])
         value = value * float(parameter["factor"])
 
@@ -383,14 +355,14 @@ class Parameter(models.Model):
           value = eval(parameter["formula"])
 
         value = value * float(parameter["orchestrator_factor"])
-
+        #print("max", parameter["max_value"])
         if parameter["disabled_threshold"] == False and value > parameter["max_value"]:
           value = parameter["max_value"]
           is_threshold_value = True
         elif parameter["disabled_threshold"] == False and value < parameter["min_value"]:
           value = parameter["min_value"]
           is_threshold_value = True
-
+        #print("write_bridge", parameter["max_value"])
         Parameter.write_bridge(connection_id, key, value)
 
         time.sleep(1)
@@ -398,12 +370,14 @@ class Parameter(models.Model):
         print("[ERROR]", parameter["id"], error)
         value = parameter["min_value"]
         is_threshold_value = True
-
+      print(key, "raw_value", raw_value, "value", value)
       result = {
         "id": parameter["id"],
+        "raw_value": "{0:.3f}".format(raw_value),
         "value": "{0:.3f}".format(value),
         "is_threshold_value": is_threshold_value
       }
+      #print("result:",result)
       async_to_sync(channel_layer.group_send)("socket-data" + Env.get("WS_CHANNEL_NAME", ""), {'type': 'send_data', 'data': {"items": [result]}})
 
     else:
@@ -418,11 +392,11 @@ class Parameter(models.Model):
     results = []
     for connection in Connection.by_parameter_keys(keys):
       try:
-        client = Helper.modbus_connection(connection)
-        client.connect()
+        #client = AppHelper.modbus_connection(connection)
+        #client.connect()
         for key in keys:
-          results.append(Parameter.read_original_value(client, connection["id"], key))
-        client.close()
+          results.append(Parameter.read_original_value(connection["id"], key))
+        #client.close()
       except Exception as error:
         print("[ERROR] client read value :", error)
     return results
@@ -430,10 +404,10 @@ class Parameter(models.Model):
     result = {}
     connection = Connection.by_parameter_key(key)
     try:
-      client = Helper.modbus_connection(connection)
-      client.connect()
-      result = Parameter.read_original_value(client, connection["id"], key)
-      client.close()
+      #client = AppHelper.modbus_connection(connection)
+      #client.connect()
+      result = Parameter.read_original_value(connection["id"], key)
+      #client.close()
     except Exception as error:
       print("[ERROR] client read value :", error)
     return result
@@ -444,7 +418,10 @@ class Parameter(models.Model):
       parameter = Parameter.config_value(connection_id, key)
 
       if parameter != {}:
-        read = Parameter.read_parameter(client, parameter)
+        #read = Parameter.read_parameter(client, parameter)
+        sQuery = "select * from datalogger_parameters where datalogger_parameters.key='"+key+"'"
+        #print("sQuery:",sQuery)
+        read=Parameter.send_udp(sQuery,parameter)
         value = read[0]
 
     except Exception as error:
@@ -454,6 +431,7 @@ class Parameter(models.Model):
       "key": key,
       "value": "{0:.3f}".format(value)
     }
+
   def read_parameter(client, parameter):
     MAX_RETRY = 3
     actual_read_count = 0
@@ -465,8 +443,8 @@ class Parameter(models.Model):
       try:
         if parameter != {}:
           keyid = parameter["keyid"]
-          parameter["byteorder_label"] = Helper.label(DecodeOrders, parameter["byteorder"])
-          parameter["wordorder_label"] = Helper.label(DecodeOrders, parameter["wordorder"])
+          parameter["byteorder_label"] = AppHelper.label(DecodeOrders, parameter["byteorder"])
+          parameter["wordorder_label"] = AppHelper.label(DecodeOrders, parameter["wordorder"])
 
           if parameter["function_code"] == "03":
             registers_value = client.read_holding_registers(parameter["address"], parameter["data_type"], unit = parameter["uid"]).registers
@@ -496,8 +474,8 @@ class Parameter(models.Model):
 
     try:
       if parameter != {}:
-        byteorder = Helper.label(DecodeOrders, parameter["byteorder"])
-        wordorder = Helper.label(DecodeOrders, parameter["wordorder"])
+        byteorder = AppHelper.label(DecodeOrders, parameter["byteorder"])
+        wordorder = AppHelper.label(DecodeOrders, parameter["wordorder"])
         builder = BinaryPayloadBuilder(byteorder = eval(str(byteorder)), wordorder = eval(str(wordorder)))
         builder.add_32bit_float(value)
         payload = builder.to_registers()
@@ -519,7 +497,7 @@ class Parameter(models.Model):
 
         if parameter != {}:
           raw_values = Parameter.encode_value(connection_id, key, value)
-          client = Helper.modbus_connection(connection)
+          client = AppHelper.modbus_connection(connection)
           client.connect()
           client.write_registers(parameter["address"], raw_values, unit = parameter["uid"])
           client.close()
@@ -565,7 +543,7 @@ class Component(models.Model):
     try:
       cursor = connection.cursor()
       cursor.execute('SELECT CONCAT(dc.key, "-uid", ds.uid, "-address", dp.address, "-", "value", dc.id, ds.id, dp.id) as id, di.label as label, FORMAT(dp.min_value, 3) as value, du.label as unit, dp.enable_ispu as enable_ispu FROM datalogger_components dc, datalogger_items di, datalogger_sensors ds, datalogger_parameters dp, datalogger_units du WHERE dc.id = di.component_id AND di.parameter_id = dp.id AND dp.sensor_id = ds.id AND di.unit_id = du.id AND dc.status = 1 AND di.status = 1 AND dc.key = %s;', [key])
-      result = Helper.fetchall(cursor)
+      result = AppHelper.fetchall(cursor)
       return result
     except:
       []
@@ -573,7 +551,7 @@ class Component(models.Model):
     try:
       cursor = connection.cursor()
       cursor.execute('SELECT CONCAT(dc.key, "-uid", ds.uid, "-address", dp.address, "-", "status", dc.id, ds.id, dp.id) as id, di.label as name, "off" as status FROM datalogger_components dc, datalogger_items di, datalogger_sensors ds, datalogger_parameters dp WHERE dc.id = di.component_id AND di.parameter_id = dp.id AND dp.sensor_id = ds.id AND dc.status = 1 AND di.status = 1 AND dc.key = %s;', [key])
-      result = Helper.fetchall(cursor)
+      result = AppHelper.fetchall(cursor)
       return result
     except:
       []
@@ -609,7 +587,7 @@ class Refrence(models.Model):
     try:
       cursor = connection.cursor()
       cursor.execute("SELECT dr.* FROM datalogger_refrences dr ORDER BY dr.datetime DESC LIMIT 1;")
-      result = Helper.fetchone(cursor)
+      result = AppHelper.fetchone(cursor)
       return result
     except:
       {}
@@ -617,7 +595,7 @@ class Refrence(models.Model):
     try:
       cursor = connection.cursor()
       cursor.execute("SELECT dr.* FROM datalogger_refrences dr WHERE dr.uploaded_klhk IN ('1', '4') ORDER BY dr.datetime ASC LIMIT 1;")
-      result = Helper.fetchone(cursor)
+      result = AppHelper.fetchone(cursor)
       return result
     except:
       {}
@@ -625,12 +603,12 @@ class Refrence(models.Model):
     try:
       cursor = connection.cursor()
       cursor.execute("SELECT dr.* FROM datalogger_refrences dr WHERE dr.uploaded_portal IN ('1', '4') ORDER BY dr.datetime ASC LIMIT 1;")
-      result = Helper.fetchone(cursor)
+      result = AppHelper.fetchone(cursor)
       return result
     except:
       {}
   def init_refrence():
-    print("init_refrence")
+    print("init_refrence C")
     #last_refrence = Refrence.last_refrence()
     #if last_refrence != {} and last_refrence["uploaded_portal"] == "1" and last_refrence["uploaded_klhk"] == "1" and Value.by_refrence(last_refrence["id"]) == []:
     #  refrence = Refrence.objects.get(id=last_refrence["id"])
@@ -641,6 +619,7 @@ class Refrence(models.Model):
     #  date_time = datetime.now()
     #  refrence = Refrence.objects.create(identifier=date_time.strftime("%Y%m%d%H%M%S"), datetime=date_time)
     #  return refrence
+
 
 class Value(models.Model):
   parameter = models.ForeignKey(Parameter, on_delete=models.CASCADE, related_name="value_parameter_id")
@@ -655,7 +634,7 @@ class Value(models.Model):
     try:
       cursor = connection.cursor()
       cursor.execute("SELECT dv.* FROM datalogger_values dv WHERE dv.refrence_id = %s;", [id])
-      result = Helper.fetchall(cursor)
+      result = AppHelper.fetchall(cursor)
       return result
     except:
       []
@@ -663,7 +642,7 @@ class Value(models.Model):
     try:
       cursor = connection.cursor()
       cursor.execute("SELECT dv.* FROM datalogger_values dv, datalogger_refrences dr, datalogger_parameters dp WHERE dv.refrence_id = dr.id AND dr.identifier = %(refrence)s AND dp.id = dv.parameter_id AND dp.key = %(parameter)s ORDER BY dv.updated_at DESC, dv.value DESC LIMIT 1;", {"refrence": refrence, "parameter": parameter})
-      result = Helper.fetchone(cursor)
+      result = AppHelper.fetchone(cursor)
       return result
     except:
       {}
@@ -712,9 +691,8 @@ class Job(models.Model):
       refrence_klhk_ready = Refrence.klhk_ready()
       while refrence_klhk_ready != {}:
         refrence = Refrence.objects.get(identifier=refrence_klhk_ready["identifier"])
-        #refrence.uploaded_klhk = "2"
-        #refrence.save()
-        print("[now]",datetime.now())
+        refrence.uploaded_klhk = "2"
+        refrence.save()
         print("[Send KLHK] Start", refrence.identifier)
 
         date = refrence.datetime
@@ -723,6 +701,7 @@ class Job(models.Model):
         apisecret = Config.value_by_key("KLHK_APISECRET")
         station = Config.value_by_key("KLHK_STATION")
         params = eval(Config.value_by_key("KLHK_PARAMS"))
+
         request = requests.post(url, json = params)
         if request.status_code == 200:
           refrence.uploaded_klhk = "3"
@@ -732,15 +711,15 @@ class Job(models.Model):
           refrence.uploaded_klhk = "4"
           refrence.save()
           print("[Send KLHK] Finish", refrence.identifier, "failed with response", request.json())
-        print("param",params)
         refrence_klhk_ready = Refrence.klhk_ready()
         time.sleep(0.2)
         counter+=1
-        if (counter>1000):
+        if (counter>100):
           break
+
       #else:
       #  print("[Send KLHK] data ready not found")
-      
+
       time.sleep(2.5)
     except Exception as error:
       print(error)
@@ -757,10 +736,9 @@ class Job(models.Model):
       refrence_portal_ready = Refrence.portal_ready()
       while refrence_portal_ready != {}:
         refrence = Refrence.objects.get(identifier=refrence_portal_ready["identifier"])
-        refrence.uploaded_portal = "2"
-        refrence.save()
-        print("[nowp]",datetime.now())
-        print("[Send Portal] Start", refrence.identifier)
+        #refrence.uploaded_portal = "2"
+        #refrence.save()
+        print("[Send Portal ] Start", refrence.identifier)
 
         date = refrence.datetime
         created_at = date.strftime("%Y-%m-%d %H:%M:%S +0700")
@@ -783,15 +761,15 @@ class Job(models.Model):
           refrence.uploaded_portal = "4"
           refrence.save()
           print("[Send Portal] Finish", refrence.identifier, "failed with response", request.json())
+      #else:
+      #  print("[Send Portal] data ready not found")
         refrence_portal_ready = Refrence.portal_ready()
         time.sleep(0.2)
         counter+=1
         if (counter>1000):
-          break
-      #else:
-      #  print("[Send Portal] data ready not found")
+           break
 
-      
+
       time.sleep(2.5)
     except Exception as error:
       print(error)
@@ -859,12 +837,13 @@ class Job(models.Model):
         return 0.0
 
     try:
+      counter=0
       refrence_klhk_ready = Refrence.klhk_ready()
-      if refrence_klhk_ready != {}:
+      while refrence_klhk_ready != {}:
         refrence = Refrence.objects.get(identifier=refrence_klhk_ready["identifier"])
-        refrence.uploaded_klhk = "2"
-        refrence.save()
-        print("[Send KLHK AQMS] Start", refrence.identifier)
+        #refrence.uploaded_klhk = "2"
+        #refrence.save()
+        print("[Send KLHK AQMS]Start", refrence.identifier)
 
         klhk_config = eval(Config.value_by_key("KLHK_CONFIG"))
         request_token = requests.post(klhk_config['auth_url'], json = klhk_config['auth_body'])
@@ -885,25 +864,49 @@ class Job(models.Model):
             if response_send_data['status'] == 1:
               refrence.uploaded_klhk = "3"
               refrence.save()
-              print("[Send KLHK AQMS] Finish", refrence.identifier, "successful with response", response_send_data)
+              print("[Send KLHK AQMS ] Finish", refrence.identifier, "successful with response", response_send_data)
+              Job.send_udp_log("klhk#"+"identifier,"+refrence.identifier+"#status,success#message,"+str(klhk_config['data_body'])+"#")
             else:
               refrence.uploaded_klhk = "4"
               refrence.save()
               print("[Send KLHK AQMS] Finish", refrence.identifier, "failed with response", response_send_data)
+              Job.send_udp_log("klhk#"+"identifier,"+refrence.identifier+"#status,failed "+response_send_data+"#message,"+str(klhk_config['data_body'])+"#")
           else:
             refrence.uploaded_klhk = "4"
             refrence.save()
             print("[Send KLHK AQMS] Finish", refrence.identifier, "failed with response", send_data)
+            Job.send_udp_log("klhk#" + "identifier," + refrence.identifier + "#status,failed " + str(send_data) + "#message,"+
+                         klhk_config['data_body'] + "#")
         else:
           refrence.uploaded_klhk = "4"
           refrence.save()
           print("[Send KLHK AQMS] Finish", refrence.identifier, "failed request token with response", request_token)
-      else:
-        print("[Send KLHK AQMS] data ready not found")
+          Job.send_udp_log(
+            "klhk#" + "identifier," + refrence.identifier + "#status,failed to request with token " + str(request_token) + "#message,"+
+            klhk_config['data_body'] + "#")
+        refrence_klhk_ready = Refrence.klhk_ready()
+        time.sleep(0.2)
+        counter += 1
+        if (counter > 100):
+          break
+      #else:
+      #  print("[Send KLHK AQMS] data ready not found")
+      #  Job.send_udp_log("klhk#" + "identifier,null" + "#status,failed no data" + "#message,null#")
 
       time.sleep(2.5)
     except Exception as error:
       print(error)
+  def send_udp_log(message):
+    import socket
+    UDP_IP = "127.0.0.1"
+    UDP_PORT = 2040
+    #print("UDP target IP: %s" % UDP_IP)
+    #print("UDP target port: %s" % UDP_PORT)
+    #print("message: %s" % message)
+    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    message1=bytes(message,'ascii')
+    sock.sendto(message1, (UDP_IP, UDP_PORT))
+    sock.close()
 
 class Event(models.Model):
   key = models.CharField(max_length=255, unique=True)
@@ -922,7 +925,7 @@ class Event(models.Model):
     try:
       cursor = connection.cursor()
       cursor.execute('SELECT dj.class_name as "class", dj.method_name as "method", dj.method_params as "params" FROM datalogger_events de, datalogger_jobs dj, datalogger_job_events dje WHERE dj.id = dje.job_id AND de.id = dje.event_id AND dj.status = "1" AND de.status = "1" AND de.step = %s ORDER BY dj.sequence ASC', [step])
-      result = Helper.fetchall(cursor)
+      result = AppHelper.fetchall(cursor)
       return result
     except:
       []
@@ -949,7 +952,7 @@ class Scheduler(models.Model):
     return self.objects.filter(status="1")
   def exec(self):
     try:
-      if Helper.is_present(self.method_params):
+      if AppHelper.is_present(self.method_params):
          getattr(apps.get_model(self.class_name), self.method_name)(self.method_params.split(","))
       else:
         getattr(apps.get_model(self.class_name), self.method_name)()
