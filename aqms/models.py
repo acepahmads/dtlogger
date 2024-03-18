@@ -651,12 +651,14 @@ class Value(models.Model):
     try:
       results = []
       refrence = Refrence.last_refrence()
+      refrence_id = "1"
       for key in keys:
         print("save values",[key])
         parameter_values = Parameter.read_values([key])
         parameter = Parameter.objects.get(key=key)
         parameter_value = float(parameter_values[0]["value"])
-        value = Value.objects.create(refrence_id=refrence["id"], parameter_id=parameter.id, value=parameter_value, raw_value=parameter_value)
+        print(refrence_id, parameter.parameter_id, parameter.value, parameter.raw_value)
+        value = Value.objects.create(refrence_id, parameter_id=parameter.id, value=parameter_value, raw_value=parameter_value)
         results.append(value.id)
         print("[Save Value] Start", key)
         time.sleep(0.25)
