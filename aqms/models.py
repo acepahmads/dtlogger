@@ -658,6 +658,7 @@ class Value(models.Model):
         parameter_values = Parameter.read_values([key])
         print("parameter values",parameter_values)
         parameter = Parameter.objects.get(key=key)
+        print("parameter",parameter_values[0]["value"])
         parameter_value = float(parameter_values[0]["value"])
         print("filed", refrence_id, parameter.parameter_id, parameter.value, parameter.raw_value)
         value = Value.objects.create(refrence_id, parameter_id=parameter.id, value=parameter_value, raw_value=parameter_value)
