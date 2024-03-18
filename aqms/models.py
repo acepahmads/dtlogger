@@ -656,10 +656,12 @@ class Value(models.Model):
       for key in keys:
         print("save values",[key])
         parameter_values = Parameter.read_values([key])
+        print("parameter values",parameter_values)
         parameter = Parameter.objects.get(key=key)
         parameter_value = float(parameter_values[0]["value"])
-        print(refrence_id, parameter.parameter_id, parameter.value, parameter.raw_value)
+        print("filed", refrence_id, parameter.parameter_id, parameter.value, parameter.raw_value)
         value = Value.objects.create(refrence_id, parameter_id=parameter.id, value=parameter_value, raw_value=parameter_value)
+        print("value", value)
         results.append(value.id)
         print("[Save Value] Start", key)
         time.sleep(0.25)
