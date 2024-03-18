@@ -1,7 +1,7 @@
 ps aux | grep warning
 ps -e | grep inputmodbuss
 ps -e | grep modbuss1
-ps -e | grep dbprocesstrigger
+ps -e | grep dbprocess
 ps -e | grep logmodbuss
 ps -e | grep autoresetusb
 ps -e | grep formulaproc
