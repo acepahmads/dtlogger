@@ -1,4 +1,4 @@
 ps -e | grep modbuss1
-ps -e | grep dbprocessmodbuss
+ps -e | grep dbprocesstrigger
 ps -e | grep logmodbuss
 ps -e | grep autoresetusb
