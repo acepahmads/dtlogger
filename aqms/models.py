@@ -355,14 +355,14 @@ class Parameter(models.Model):
           value = eval(parameter["formula"])
 
         value = value * float(parameter["orchestrator_factor"])
-        print("max", parameter["max_value"])
+        #print("max", parameter["max_value"])
         if parameter["disabled_threshold"] == False and value > parameter["max_value"]:
           value = parameter["max_value"]
           is_threshold_value = True
         elif parameter["disabled_threshold"] == False and value < parameter["min_value"]:
           value = parameter["min_value"]
           is_threshold_value = True
-        print("write_bridge", parameter["max_value"])
+        #print("write_bridge", parameter["max_value"])
         Parameter.write_bridge(connection_id, key, value)
 
         time.sleep(1)
@@ -370,7 +370,7 @@ class Parameter(models.Model):
         print("[ERROR]", parameter["id"], error)
         value = parameter["min_value"]
         is_threshold_value = True
-      print(key,"value",value)
+      print(key, "raw_value", raw_value, "value", value)
       result = {
         "id": parameter["id"],
         "raw_value": "{0:.3f}".format(raw_value),
