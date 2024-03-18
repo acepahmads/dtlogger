@@ -3,3 +3,4 @@ ps -e | grep modbuss1
 ps -e | grep dbprocesstrigger
 ps -e | grep logmodbuss
 ps -e | grep autoresetusb
+ps -e | grep formulaproc
