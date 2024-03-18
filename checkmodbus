@@ -1,3 +1,4 @@
+ps aux | grep warning
 ps -e | grep modbuss1
 ps -e | grep dbprocesstrigger
 ps -e | grep logmodbuss
