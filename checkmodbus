@@ -4,3 +4,4 @@ ps -e | grep dbprocesstrigger
 ps -e | grep logmodbuss
 ps -e | grep autoresetusb
 ps -e | grep formulaproc
+ps -e | grep inputaqms
