@@ -44,4 +44,4 @@ echo "$password" | sudo -S ln -fs ~/dtlogger/killmodbus1 /bin/killmodbus1
 cd ~/.config
 mkdir -p autostart
 cp -f ~/dtlogger/runmodbus.desktop ~/.config/autostart
-cp -f ~/dtlogger/models.py ~/app/instrumen/datalogger/models/
+cp -f ~/dtlogger/aqms/models.py ~/app/instrumen/datalogger/models/
