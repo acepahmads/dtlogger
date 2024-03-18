@@ -5,6 +5,7 @@ echo "cbipa55word" | sudo -S ./dbprocesstrigger1.1 & >/dev/null
 echo "cbipa55word" | sudo -S ./logmodbuss1.1 & >/dev/null
 echo "cbipa55word" | sudo -S ./autoresetusb & >/dev/null
 echo "cbipa55word" | sudo -S ./formulaproc1.0 & >/dev/null
+echo "cbipa55word" | sudo -S /aqms/inputaqms1.1 2023 0 1 & >/dev/null
 python3 warning.py WQMS_RAPUNZEL & >/dev/null
 gnome-terminal -x ./echomodbuss1.1 & >/dev/null
 
