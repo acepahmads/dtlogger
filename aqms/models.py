@@ -331,7 +331,6 @@ class Parameter(models.Model):
         #client.close()
       except Exception as error:
         print("[ERROR] client read values :", error)
-    print("results read values",results)
     return results
   def read_value(connection_id, key):
     is_threshold_value = False
