@@ -1,5 +1,5 @@
 ps aux | grep warning
-ps -e | grep inputmodbuss
+ps aux | grep inputmodbus
 ps -e | grep modbuss1
 ps -e | grep dbprocess
 ps -e | grep logmodbuss
