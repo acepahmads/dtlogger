@@ -2,6 +2,5 @@ echo "cbipa55word" | sudo -S killall modbuss1.1
 echo "cbipa55word" | sudo -S killall dbprocesstrigger1.1
 echo "cbipa55word" | sudo -S killall logmodbuss1.1
 echo "cbipa55word" | sudo -S killall autoresetusb
-echo "cbipa55word" | sudo -S killall formulaproc1.0
 pkill -f warning.py
 pkill -f inputmodbus.py
