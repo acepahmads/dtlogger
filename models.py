@@ -630,7 +630,7 @@ class Refrence(models.Model):
     except:
       {}
   def init_refrence():
-    print("init_refrence")
+    print("init_refrence C")
     #last_refrence = Refrence.last_refrence()
     #if last_refrence != {} and last_refrence["uploaded_portal"] == "1" and last_refrence["uploaded_klhk"] == "1" and Value.by_refrence(last_refrence["id"]) == []:
     #  refrence = Refrence.objects.get(id=last_refrence["id"])
