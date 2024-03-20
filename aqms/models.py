@@ -1,3 +1,4 @@
+import re
 import jwt
 import json
 import time
@@ -6,6 +7,8 @@ import requests
 import channels.layers
 import socket
 import select
+from statistics import mode, mean
+from decimal import Decimal
 from os import environ as Env
 from datetime import datetime
 from django.db import models, connection
@@ -13,8 +16,9 @@ from django.apps import apps
 from pymodbus.payload import BinaryPayloadDecoder, BinaryPayloadBuilder
 from pymodbus.constants import Endian
 from asgiref.sync import async_to_sync
-from .enums import Statuses, Methods, Bytesizes, Parities, Stopbits, FunctionCodes, Outputs, DecodeOrders, DisplayTypes, IntegrationStatuses
+from .enums import Statuses, Methods, Bytesizes, Parities, Stopbits, FunctionCodes, Outputs, DecodeOrders, DisplayTypes, IntegrationStatuses, CollectingState, ProcessingState, ValueType
 from .helpers import AppHelper
+from eav.decorators import register_eav
 
 logger = logging.getLogger("app")
 
@@ -144,6 +148,7 @@ class Parameter(models.Model):
   enable_orchestrator_calibration = models.BooleanField(default=True, help_text="*Untuk mengaktifkan fitur Calibration pada Instrument Orchestrator")
   enable_orchestrator_zeroing = models.BooleanField(default=False, help_text="*Untuk mengaktifkan fitur Zeroing pada Instrument Orchestrator")
   enable_ispu = models.BooleanField(default=False, help_text="*Hanya untuk Config 'MODULE_NAME' AQMS")
+  tolerance = models.DecimalField(default=0.2, max_digits=10, decimal_places=5)
   description = models.TextField(blank=True, null=True)
   status = models.CharField(max_length=5, choices=Statuses.choices, default=Statuses.ACTIVE)
   created_at = models.DateTimeField(auto_now_add=True)
@@ -152,6 +157,8 @@ class Parameter(models.Model):
     db_table = "datalogger_parameters"
   def __str__(self):
     return self.name
+  def as_field_name(self):
+    return "value_{}".format(re.sub(r"[ -]", "_", re.sub(r"[.!@#$%^&*:;,/]", "", self.key)))
 
   def send_udp(message,parameter):
     try:
@@ -432,7 +439,6 @@ class Parameter(models.Model):
       "key": key,
       "value": "{0:.3f}".format(value)
     }
-
   def read_parameter(client, parameter):
     MAX_RETRY = 3
     actual_read_count = 0
@@ -578,6 +584,7 @@ class Refrence(models.Model):
   datetime = models.DateTimeField()
   uploaded_portal = models.CharField(max_length=5, choices=IntegrationStatuses.choices, default=IntegrationStatuses.WAITING)
   uploaded_klhk = models.CharField(max_length=5, choices=IntegrationStatuses.choices, default=IntegrationStatuses.WAITING)
+  processing_state = models.CharField(max_length=5, choices=ProcessingState.choices, default=ProcessingState.WAITING)
   created_at = models.DateTimeField(auto_now_add=True)
   updated_at = models.DateTimeField(auto_now=True)
   class Meta:
@@ -595,21 +602,41 @@ class Refrence(models.Model):
   def klhk_ready():
     try:
       cursor = connection.cursor()
-      cursor.execute("SELECT dr.* FROM datalogger_refrences dr WHERE dr.uploaded_klhk IN ('1', '4') ORDER BY dr.datetime ASC LIMIT 1;")
+      cursor.execute("SELECT dr.* FROM datalogger_refrences dr WHERE dr.uploaded_klhk IN ('1', '4') AND processing_state = '3' ORDER BY dr.datetime ASC LIMIT 1;")
       result = AppHelper.fetchone(cursor)
+      print("[Refrencesklhk] ", result)
+      print("[datetime     ] ", datetime.now())
+      #if result == {}:
+      #  time.sleep(1)
+      #  cursor = connection.cursor()
+      #  cursor.execute("SELECT dr.* FROM datalogger_refrences dr WHERE dr.uploaded_klhk IN ('1', '4') AND processing_state = '3' ORDER BY dr.datetime ASC LIMIT 1;")
+      #  result = AppHelper.fetchone(cursor)
+      #  print("[Refrencesklhk2] ", result)
+      #  print("[datetime      ] ", datetime.now())
       return result
     except:
       {}
   def portal_ready():
     try:
       cursor = connection.cursor()
-      cursor.execute("SELECT dr.* FROM datalogger_refrences dr WHERE dr.uploaded_portal IN ('1', '4') ORDER BY dr.datetime ASC LIMIT 1;")
+      cursor.execute("SELECT dr.* FROM datalogger_refrences dr WHERE dr.uploaded_portal IN ('1', '4') AND processing_state = '3' ORDER BY dr.datetime ASC LIMIT 1;")
       result = AppHelper.fetchone(cursor)
+      print("[Refrencesportal] ", result)
+      print("[datetime       ] ", datetime.now())
+      if result == {}:
+        cursor = connection.cursor()
+        cursor.execute(
+          "SELECT dr.* FROM datalogger_refrences dr WHERE dr.uploaded_portal IN ('1', '4') AND processing_state = '3' ORDER BY dr.datetime ASC LIMIT 1;")
+        result = AppHelper.fetchone(cursor)
+        print("[Refrencesportal2] ", result)
+        print("[datetime "
+              " ] ", datetime.now())
+
       return result
     except:
       {}
   def init_refrence():
-    print("init_refrence C")
+    print("init refrence c")
     #last_refrence = Refrence.last_refrence()
     #if last_refrence != {} and last_refrence["uploaded_portal"] == "1" and last_refrence["uploaded_klhk"] == "1" and Value.by_refrence(last_refrence["id"]) == []:
     #  refrence = Refrence.objects.get(id=last_refrence["id"])
@@ -620,13 +647,98 @@ class Refrence(models.Model):
     #  date_time = datetime.now()
     #  refrence = Refrence.objects.create(identifier=date_time.strftime("%Y%m%d%H%M%S"), datetime=date_time)
     #  return refrence
+  # def process():
+  #   refrences = Refrence.objects.filter(processed=False)
+  #   for refrence in refrences:
+  #     data_history = DataHistory(identifier = refrence.identifier, datetime = refrence.datetime)
+  #     parameters = Parameter.objects.filter(status=Statuses.ACTIVE)
+  #     for parameter in parameters:
+  #       try:
+  #         value = Value.by_refrence_and_parameter(refrence.identifier, parameter.key)
+  #         if value != {}:
+  #           setattr(data_history.eav, parameter.as_field_name(), value['value'])
+  #           logger.info("exec refrence {}, parameter {}, and value {}".format(refrence.identifier, parameter, value['value']))
+  #       except Exception as error:
+  #         logger.error(error)
+  #       data_history.save()
+  #     refrence.processed = True
+  #     refrence.save()
+  def process(exclude_refrence=[]):
+    refrences = Refrence.objects.filter(processing_state=ProcessingState.WAITING).exclude(identifier__in=exclude_refrence).order_by('datetime')
+    for refrence in refrences:
+      log = "================ {} ================".format(refrence.identifier);logger.info(log);print(log)
+      parameters = Parameter.objects.filter(status=Statuses.ACTIVE)
+      for parameter in parameters:
+        try:
+          tolerance = parameter.tolerance
+          log = "value {}".format(parameter.key);logger.info(log);print(log)
+          values = Value.objects.filter(parameter=parameter, refrence=refrence, processing_state=ProcessingState.WAITING)
+          if not not values:
+            raw_values = []
+            round_values = []
 
+            for value in values:
+              if value.value > 0 :
+                round_values.append(round(value.value))
+
+              raw_values.append(value.value)
+              value.processing_state=ProcessingState.COLLECTED
+              value.save()
+              
+            if not round_values:
+              refrence.handle_zero_value(parameter, raw_values)
+            else:
+              base_line_data = mode(round_values)
+
+              if base_line_data == 0:
+                base_line_data = mode(raw_values)
+
+              clean_values = []
+              for value in raw_values:
+                if value <= base_line_data*(1+tolerance) and value >= base_line_data*(1-tolerance):
+                  clean_values.append(value)
+
+              if not clean_values:
+                refrence.handle_zero_value(parameter, raw_values)
+              else:
+                prev_value = refrence.get_final_value_by_refrence_and_parameter(parameter)
+                mean_raw_value = mean(raw_values)
+                mean_value = mean(clean_values)
+                if not not prev_value:
+                  prev_data = prev_value.get()
+                  upper_prev_tolerance = tolerance * 5
+                  lower_prev_tolerance = tolerance * 1
+                  if mean_value > prev_data.value * (1 + upper_prev_tolerance):
+                    mean_value = prev_data.value * (1 + upper_prev_tolerance)
+                  elif mean_value < prev_data.value * (1 - lower_prev_tolerance):
+                    mean_value = prev_data.value * (1 - lower_prev_tolerance)
+                Value.objects.create(parameter=parameter, refrence=refrence, value=mean_value, raw_value=mean_raw_value, processing_state=ProcessingState.COLLECTED, type=ValueType.FINAL)
+        except Exception as error:
+          logger.error(error);print(error)
+      refrence.processing_state=ProcessingState.COLLECTED
+      refrence.save()
+  def handle_zero_value(self, parameter, raw_values):
+    log = "Zero Value - {} - {} - {}".format(self.identifier, parameter.key, mean(raw_values));logger.info(log);print(log)
+    prev_value = self.get_final_value_by_refrence_and_parameter(parameter)
+    mean_raw_value = mean(raw_values)
+    if not not prev_value:
+      prev_data = prev_value.get()
+      mean_value = prev_data.value
+    else:
+      mean_value = mean_raw_value
+    Value.objects.create(parameter=parameter, refrence=self, value=mean_value, raw_value=mean_raw_value, processing_state=ProcessingState.COLLECTED, type=ValueType.FINAL)
+  def get_final_value_by_refrence_and_parameter(self, parameter):
+    refrence = Refrence.objects.filter(processing_state=ProcessingState.COLLECTED).order_by('-datetime')[:1]
+    value = Value.objects.filter(parameter=parameter, refrence=refrence, processing_state=ProcessingState.COLLECTED, type=ValueType.FINAL)[:1]
+    return value
 
 class Value(models.Model):
   parameter = models.ForeignKey(Parameter, on_delete=models.CASCADE, related_name="value_parameter_id")
   refrence = models.ForeignKey(Refrence, on_delete=models.CASCADE, related_name="refrence_id")
   raw_value = models.DecimalField(default=1, max_digits=8, decimal_places=2)
   value = models.DecimalField(default=1, max_digits=8, decimal_places=2)
+  processing_state = models.CharField(max_length=5, choices=ProcessingState.choices, default=ProcessingState.WAITING)
+  type = models.CharField(max_length=5, choices=ValueType.choices, default=ValueType.SAMPLE)
   created_at = models.DateTimeField(auto_now_add=True)
   updated_at = models.DateTimeField(auto_now=True)
   class Meta:
@@ -636,14 +748,45 @@ class Value(models.Model):
       cursor = connection.cursor()
       cursor.execute("SELECT dv.* FROM datalogger_values dv WHERE dv.refrence_id = %s;", [id])
       result = AppHelper.fetchall(cursor)
+      print("[datetime now  ] ",datetime.now());
+      print("[values refid  ] ",id);
       return result
     except:
       []
+  def by_paremeterid_refrence(id):
+    try:
+      #print("Ready to send data via websocket")
+      cursor = connection.cursor()
+
+      cursor.execute("select datalogger_values.value from datalogger_values inner join datalogger_parameters on datalogger_parameters.id = datalogger_values.parameter_id where datalogger_parameters.key = %s order by datalogger_values.created_at desc limit 1;", [id])
+      #result = AppHelper.fetchone(cursor)
+      #print("[now ws0] ",datetime.now())
+      result = str(cursor.fetchone()[0])
+      #print("[result0] ",result)
+      #print("[id     ] ",id)
+      return result
+    except:
+      {}
   def by_refrence_and_parameter(refrence, parameter):
     try:
       cursor = connection.cursor()
       cursor.execute("SELECT dv.* FROM datalogger_values dv, datalogger_refrences dr, datalogger_parameters dp WHERE dv.refrence_id = dr.id AND dr.identifier = %(refrence)s AND dp.id = dv.parameter_id AND dp.key = %(parameter)s ORDER BY dv.updated_at DESC, dv.value DESC LIMIT 1;", {"refrence": refrence, "parameter": parameter})
       result = AppHelper.fetchone(cursor)
+      print("[datetime now  ] ",datetime.now());
+      print("[identifier    ] ",refrence);
+      print("[parameterid   ] ",parameter);
+      print("[value Refrence] ",result);
+      if result == {}:
+        cursor.execute(
+          "SELECT dv.* FROM datalogger_values dv, datalogger_refrences dr, datalogger_parameters dp WHERE dv.refrence_id = dr.id AND dr.identifier = %(refrence)s AND dp.id = dv.parameter_id AND dp.key = %(parameter)s ORDER BY dv.updated_at DESC, dv.value DESC LIMIT 1;",
+          {"refrence": refrence, "parameter": parameter})
+        result = AppHelper.fetchone(cursor)
+        print("[datetime now2 ] ", datetime.now())
+        print("[identifier2   ] ", refrence)
+        print("[parameterid2  ] ", parameter)
+        print("[value Refrenc2] ", result)
+      else :
+        print("Data ok")      
       return result
     except:
       {}
@@ -651,16 +794,12 @@ class Value(models.Model):
     try:
       results = []
       refrence = Refrence.last_refrence()
-      refrence_id = "1"
       for key in keys:
         parameter_values = Parameter.read_values([key])
-        #print("parameter values",parameter_values)
         #parameter = Parameter.objects.get(key=key)
-        #print("parameter",parameter_values[0]["value"])
         #parameter_value = float(parameter_values[0]["value"])
-        #print("filed1", refrence_id, parameter.parameter_id, parameter.value, parameter.raw_value)
-        #value = Value.objects.create(refrence_id, parameter_id=parameter.id, value=parameter_value, raw_value=parameter_value)
-        #print("value", value)
+        #raw_parameter_value = float(parameter_values[0]["raw_value"])
+        #value = Value.objects.create(refrence_id=refrence["id"], parameter_id=parameter.id, value=parameter_value, raw_value=raw_parameter_value)
         #results.append(value.id)
         #print("[Save Value] Start", key)
         time.sleep(0.25)
@@ -966,3 +1105,26 @@ class Scheduler(models.Model):
       logger.info("exec scheduler {} ...".format(self.key))
     except Exception as error:
       logger.error(error)
+
+class DataCategory(models.Model):
+  job = models.ForeignKey(Job, on_delete=models.CASCADE, db_column="job_id", blank=True, null=True)
+  key = models.CharField(max_length=255, unique=True)
+  name = models.CharField(max_length=255)
+  sequence = models.PositiveIntegerField(default=1)
+  description = models.TextField(blank=True, null=True)
+  created_at = models.DateTimeField(auto_now_add=True)
+  updated_at = models.DateTimeField(auto_now=True)
+  class Meta:
+    db_table = "datalogger_data_categories"
+ 
+@register_eav()
+class DataHistory(models.Model):
+  category = models.ForeignKey(DataCategory, on_delete=models.CASCADE, db_column="data_category_id", blank=True, null=True)
+  identifier = models.CharField(max_length=255, unique=True)
+  datetime = models.DateTimeField()
+  data_sampling = models.TextField(blank=False, null=False)
+  collecting_state = models.CharField(max_length=5, choices=CollectingState.choices, default=CollectingState.PROCESSING)
+  created_at = models.DateTimeField(auto_now_add=True)
+  updated_at = models.DateTimeField(auto_now=True)
+  class Meta:
+    db_table = "datalogger_data_histories"
