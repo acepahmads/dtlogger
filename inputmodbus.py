@@ -6,6 +6,20 @@ import mysql.connector
 import socket
 import json
 
+
+def send_udp_log(message):
+    import socket
+    UDP_IP = "127.0.0.1"
+    UDP_PORT = 2040
+    # print("UDP target IP: %s" % UDP_IP)
+    # print("UDP target port: %s" % UDP_PORT)
+    # print("message: %s" % message)
+    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    message1 = bytes(message, 'ascii')
+    sock.sendto(message1, (UDP_IP, UDP_PORT))
+    sock.close()
+
+
 def save_value(data, sql):
     try:
         print("save value")
@@ -83,6 +97,7 @@ def main():
             save_value(data, sql)
         except Exception as error:
             print("[ERROR]", error)
+            send_udp_log("inputmodbus#" + "E "+str(error))
 
 if __name__ == "__main__":
     main()
