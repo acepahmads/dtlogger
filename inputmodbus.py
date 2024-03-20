@@ -50,36 +50,40 @@ def main():
     socket.SOCK_DGRAM)  # UDP
     sock.bind((UDP_IP, UDP_PORT))
     while True:
-        data, addr = sock.recvfrom(1024)  # buffer size is 1024 bytes
-        print(data)
-        json_data = json.loads(data)
-        print(json_data["parameter_id"], json_data["raw_value"], json_data["disabled_threshold"],
-              json_data["orchestrator_reduction"], json_data["orchestrator_factor"], json_data["min_value"], json_data["max_value"], json_data["formula"])
+        try:
+            data, addr = sock.recvfrom(1024)  # buffer size is 1024 bytes
+            print(data)
+            json_data = json.loads(data)
+            print(json_data["parameter_id"], json_data["raw_value"], json_data["disabled_threshold"],
+                  json_data["orchestrator_reduction"], json_data["orchestrator_factor"], json_data["min_value"], json_data["max_value"], json_data["formula"])
 
-        raw_value = float(json_data["raw_value"])
-        value = raw_value
-        value = value - float(json_data["orchestrator_reduction"])
-        value = value * float(json_data["factor"])
+            raw_value = float(json_data["raw_value"])
+            value = raw_value
+            value = value - float(json_data["orchestrator_reduction"])
+            value = value * float(json_data["factor"])
 
-        if json_data["formula"] != "":
-          value = eval(json_data["formula"])
+            if json_data["formula"] != "":
+              value = eval(json_data["formula"])
 
-        value = value * float(json_data["orchestrator_factor"])
-        #print("max", parameter["max_value"])
-        if json_data["disabled_threshold"] == False and value > json_data["max_value"]:
-          value = json_data["max_value"]
-        elif json_data["disabled_threshold"] == False and value < json_data["min_value"]:
-          value = json_data["min_value"]
-        print(value)
+            value = value * float(json_data["orchestrator_factor"])
+            #print("max", parameter["max_value"])
+            if json_data["disabled_threshold"] == False and value > json_data["max_value"]:
+              value = json_data["max_value"]
+            elif json_data["disabled_threshold"] == False and value < json_data["min_value"]:
+              value = json_data["min_value"]
+            print(value)
 
-        now = datetime.datetime.now()
-        data = [
-            (raw_value, value, now, now, json_data["parameter_id"], "1", "1", "1")
-        ]
+            now = datetime.datetime.now()
+            data = [
+                (raw_value, value, now, now, json_data["parameter_id"], "1", "1", "1")
+            ]
 
-        sql = "insert into datalogger_values(raw_value, value, created_at, updated_at, parameter_id, refrence_id, processing_state, type) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)"
-        print(sql, data)
-        save_value(data, sql)
+            sql = "insert into datalogger_values(raw_value, value, created_at, updated_at, parameter_id, refrence_id, processing_state, type) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)"
+            print(sql, data)
+            save_value(data, sql)
+        except Exception as error:
+            print("[ERROR]", error)
+
 if __name__ == "__main__":
     main()
     """
