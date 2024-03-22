@@ -65,9 +65,11 @@ if [[ $selected_module != "invalid module" ]]; then
   cp -f ~/dtlogger/runmodbus.desktop ~/.config/autostart
   if [[ $selected_module == "wqms_onlimo" ]]; then
     cp -f ~/dtlogger/models.py ~/app/instrumen/datalogger/models/
+    echo "update models.py to ~/app/instrumen/datalogger/models/"
   elif [ $selected_module == "aqms" ];
   then
-    cp -f ~/dtlogger/aqms/models.py ~/app/instrumen/datalogger/models/
+    cp -f ~/dtlogger/aqms/models.py ~/app/instrumen/datalogger/
+    echo "update models.py to ~/app/instrumen/datalogger/"
   else
     echo "no module found"
   fi
