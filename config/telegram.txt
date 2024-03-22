@@ -1,0 +1,1 @@
+{"url" : "https://api.telegram.org/bot7013180303:AAEN1duZ6W4L__pBX6l32OnieQ-BZy6rSJ8/sendMessage", "chat_id" : "@warning_onlimo"}
