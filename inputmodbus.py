@@ -89,7 +89,7 @@ def main():
 
             now = datetime.datetime.now()
             data = [
-                (raw_value, value, now, now, json_data["parameter_id"], "1", "1", "1")
+                (raw_value, value, now, now, json_data["parameter_id"], "1")
             ]
 
             sql = "insert into datalogger_values(raw_value, value, created_at, updated_at, parameter_id, refrence_id) VALUES (%s, %s, %s, %s, %s, %s)"
