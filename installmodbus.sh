@@ -73,6 +73,9 @@ if [[ $selected_module != "invalid module" ]]; then
   else
     echo "no module found"
   fi
+  cd ~/dtlogger/config/
+  mysql -ucbi -pcbipa55word wqms_onlimo < datalogger_config_warning.sql
+  cd ~
 else
   echo "$selected_module"
 fi
