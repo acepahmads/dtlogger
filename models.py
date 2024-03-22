@@ -730,11 +730,11 @@ class Value(models.Model):
       refrence = Refrence.last_refrence()
       for key in keys:
         parameter_values = Parameter.read_values([key])
-        parameter = Parameter.objects.get(key=key)
-        parameter_value = float(parameter_values[0]["value"])
-        value = Value.objects.create(refrence_id=refrence["id"], parameter_id=parameter.id, value=parameter_value, raw_value=parameter_value)
-        results.append(value.id)
-        print("[Save Value] Start", key)
+        #parameter = Parameter.objects.get(key=key)
+        #parameter_value = float(parameter_values[0]["value"])
+        #value = Value.objects.create(refrence_id=refrence["id"], parameter_id=parameter.id, value=parameter_value, raw_value=parameter_value)
+        #results.append(value.id)
+        #print("[Save Value] Start", key)
         time.sleep(0.25)
     except:
       results = []
