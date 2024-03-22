@@ -48,18 +48,22 @@ fi
 printf "\n"
 if [[ $selected_module != "invalid module" ]]; then
   cd ~
+  echo "remove folder dtlogger"
   rm -fr dtlogger
   git clone "https://${token}@github.com/acepahmads/dtlogger.git"
   cd dtlogger
   git checkout "${branch}"
+  echo "install requirement"
   pip3 install -r requirements.txt
   printf "change permission\n"
   echo "$password" | sudo -S chmod +x *
+  echo "make link file"
   echo "$password" | sudo -S ln -fs ~/dtlogger/runmodbus /bin/runmodbus
   echo "$password" | sudo -S ln -fs ~/dtlogger/killmodbus /bin/killmodbus
   echo "$password" | sudo -S ln -fs ~/dtlogger/checkmodbus /bin/checkmodbus
   echo "$password" | sudo -S ln -fs ~/dtlogger/runmodbus1 /bin/runmodbus1
   echo "$password" | sudo -S ln -fs ~/dtlogger/killmodbus1 /bin/killmodbus1
+  echo "make autostart module"
   cd ~/.config
   mkdir -p autostart
   cp -f ~/dtlogger/runmodbus.desktop ~/.config/autostart
@@ -74,6 +78,7 @@ if [[ $selected_module != "invalid module" ]]; then
     echo "no module found"
   fi
   cd ~/dtlogger/config/
+  echo "create table warning"
   mysql -ucbi -pcbipa55word wqms_onlimo < datalogger_config_warning.sql
   cd ~
 else
