@@ -24,7 +24,7 @@ def save_value(data, sql):
     try:
         print("save value")
         mydb = mysql.connector.connect(host='localhost',
-                                             database='aqms',
+                                             database='wqms_onlimo',
                                              user='cbi',
                                              password='cbipa55word')
 
@@ -92,7 +92,7 @@ def main():
                 (raw_value, value, now, now, json_data["parameter_id"], "1", "1", "1")
             ]
 
-            sql = "insert into datalogger_values(raw_value, value, created_at, updated_at, parameter_id, refrence_id, processing_state, type) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)"
+            sql = "insert into datalogger_values(raw_value, value, created_at, updated_at, parameter_id, refrence_id) VALUES (%s, %s, %s, %s, %s, %s)"
             print(sql, data)
             save_value(data, sql)
         except Exception as error:
