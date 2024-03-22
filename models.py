@@ -3,6 +3,8 @@ import json
 import time
 import logging
 import requests
+import socket
+import select
 import channels.layers
 from os import environ as Env
 from datetime import datetime
@@ -233,6 +235,42 @@ class Parameter(models.Model):
     db_table = "datalogger_parameters"
   def __str__(self):
     return self.name
+  def send_udp(message,parameter):
+    try:
+     UDP_IP = "127.0.0.1"
+     UDP_PORT = 2024
+     status = False
+     #print("send message: %s" % message)
+     #print("request")
+     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+     message1=bytes(message,'ascii')
+     sock.sendto(message1, (UDP_IP, UDP_PORT))
+     sock.setblocking(0)
+     ready = select.select([sock], [], [], 1)
+     value="0"
+     if ready[0]:
+      value, addr = sock.recvfrom(1024) # buffer size is 1024 bytes
+      if parameter["output"] == "2":
+       status = True
+      #print("rcv data",data)
+     sock.close()
+    except socket.error:
+     []
+    return [value, status];
+  def recv_udp():
+    UDP_IP = "127.0.0.1"
+    UDP_PORT = 2025
+    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    sock.bind((UDP_IP, UDP_PORT))
+    sock.setblocking(0)
+    ready = select.select([sock], [], [], 5)
+    data=0
+    print("ready to recv")
+    if ready[0]:
+     data, addr = sock.recvfrom(1024) # buffer size is 1024 bytes
+     print("recv " % data)
+    sock.close()
+    return data
   def config_write(connection_id, key):
     try:
       cursor = connection.cursor()
@@ -277,19 +315,23 @@ class Parameter(models.Model):
     results = []
     for connection in Connection.by_parameter_keys(keys):
       try:
-        client = Helper.modbus_connection(connection)
-        client.connect()
+        #client = AppHelper.modbus_connection(connection)
+        #client.connect()
         for key in keys:
-          results.append(Parameter.write(client, connection["id"], key))
-        client.close()
+          results.append(Parameter.write(connection["id"], key))
+        #client.close()
       except Exception as error:
         print("[ERROR] client write :", error)
     return results
-  def write(client, connection_id, key):
+  def write(connection_id, key):
     parameter = Parameter.config_write(connection_id, key)
     if parameter != {}:
       try:
-        client.write_register(parameter["address"], parameter["data_type"], unit = parameter["uid"])
+        #client.write_register(parameter["address"], parameter["data_type"], unit = parameter["uid"])
+        print("write",key)
+        sQuery = "select * from datalogger_parameters where datalogger_parameters.key='"+key+"'"
+        #print("sQuery:",sQuery)
+        Parameter.send_udp(sQuery,parameter)
         time.sleep(0.1)
         write_status = True
       except Exception as error:
@@ -312,15 +354,15 @@ class Parameter(models.Model):
     results = []
     for connection in Connection.by_parameter_keys(keys):
       try:
-        client = Helper.modbus_connection(connection)
-        client.connect()
+        #client = AppHelper.modbus_connection(connection)
+        #client.connect()
         for key in keys:
-          results.append(Parameter.read_status(client, connection["id"], key))
-        client.close()
+          results.append(Parameter.read_status(connection["id"], key))
+        #client.close()
       except Exception as error:
         print("[ERROR] client read status :", error)
     return results
-  def read_status(client, connection_id, key):
+  def read_status(connection_id, key):
     parameter = Parameter.config_status(connection_id, key)
     result_status = "off"
 
@@ -328,7 +370,10 @@ class Parameter(models.Model):
       channel_layer = channels.layers.get_channel_layer()
 
       try:
-        read = Parameter.read_parameter(client, parameter)
+        #read = Parameter.read_parameter(client, parameter)
+        sQuery = "select * from datalogger_parameters where datalogger_parameters.key='"+key+"'"
+        #print("sQuery:",sQuery)
+        read=Parameter.send_udp(sQuery,parameter)
         value = read[0]
         status = read[1]
 
@@ -358,24 +403,31 @@ class Parameter(models.Model):
     results = []
     for connection in Connection.by_parameter_keys(keys):
       try:
-        client = Helper.modbus_connection(connection)
-        client.connect()
+        #client = AppHelper.modbus_connection(connection)
+        #client.connect()
         for key in keys:
-          results.append(Parameter.read_value(client, connection["id"], key))
-        client.close()
+          results.append(Parameter.read_value(connection["id"], key))
+        #client.close()
       except Exception as error:
-        print("[ERROR] client read value :", error)
+        print("[ERROR] client read values :", error)
     return results
-  def read_value(client, connection_id, key):
+  def read_value(connection_id, key):
     is_threshold_value = False
     parameter = Parameter.config_value(connection_id, key)
-
+    #print("read value p")
     if parameter != {}:
       channel_layer = channels.layers.get_channel_layer()
-
+      raw_value=0
       try:
-        read = Parameter.read_parameter(client, parameter)
-        value = read[0]
+        #print("parameter:",parameter)
+        #read = Parameter.read_parameter(parameter)
+        sQuery = "select * from datalogger_parameters where datalogger_parameters.key='"+key+"'"
+        #print("sQuery:",sQuery)
+        read=Parameter.send_udp(sQuery,parameter)
+        #datar=Parameter.recv_udp()
+        #print("data:",data)
+        raw_value=float(read[0])
+        value = raw_value
         value = value - float(parameter["orchestrator_reduction"])
         value = value * float(parameter["factor"])
 
@@ -383,14 +435,14 @@ class Parameter(models.Model):
           value = eval(parameter["formula"])
 
         value = value * float(parameter["orchestrator_factor"])
-
+        print("max", parameter["max_value"])
         if parameter["disabled_threshold"] == False and value > parameter["max_value"]:
           value = parameter["max_value"]
           is_threshold_value = True
         elif parameter["disabled_threshold"] == False and value < parameter["min_value"]:
           value = parameter["min_value"]
           is_threshold_value = True
-
+        print("write_bridge", parameter["max_value"])
         Parameter.write_bridge(connection_id, key, value)
 
         time.sleep(1)
@@ -398,12 +450,14 @@ class Parameter(models.Model):
         print("[ERROR]", parameter["id"], error)
         value = parameter["min_value"]
         is_threshold_value = True
-
+      print(key,"value",value)
       result = {
         "id": parameter["id"],
+        "raw_value": "{0:.3f}".format(raw_value), 
         "value": "{0:.3f}".format(value),
         "is_threshold_value": is_threshold_value
       }
+      #print("result:",result)
       async_to_sync(channel_layer.group_send)("socket-data" + Env.get("WS_CHANNEL_NAME", ""), {'type': 'send_data', 'data': {"items": [result]}})
 
     else:
@@ -418,11 +472,11 @@ class Parameter(models.Model):
     results = []
     for connection in Connection.by_parameter_keys(keys):
       try:
-        client = Helper.modbus_connection(connection)
-        client.connect()
+        #client = AppHelper.modbus_connection(connection)
+        #client.connect()
         for key in keys:
-          results.append(Parameter.read_original_value(client, connection["id"], key))
-        client.close()
+          results.append(Parameter.read_original_value(connection["id"], key))
+        #client.close()
       except Exception as error:
         print("[ERROR] client read value :", error)
     return results
@@ -430,10 +484,10 @@ class Parameter(models.Model):
     result = {}
     connection = Connection.by_parameter_key(key)
     try:
-      client = Helper.modbus_connection(connection)
-      client.connect()
-      result = Parameter.read_original_value(client, connection["id"], key)
-      client.close()
+      #client = AppHelper.modbus_connection(connection)
+      #client.connect()
+      result = Parameter.read_original_value(connection["id"], key)
+      #client.close()
     except Exception as error:
       print("[ERROR] client read value :", error)
     return result
@@ -444,7 +498,10 @@ class Parameter(models.Model):
       parameter = Parameter.config_value(connection_id, key)
 
       if parameter != {}:
-        read = Parameter.read_parameter(client, parameter)
+        #read = Parameter.read_parameter(client, parameter)
+        sQuery = "select * from datalogger_parameters where datalogger_parameters.key='"+key+"'"
+        #print("sQuery:",sQuery)
+        read=Parameter.send_udp(sQuery,parameter)
         value = read[0]
 
     except Exception as error:
