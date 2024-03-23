@@ -74,6 +74,8 @@ if [[ $selected_module != "invalid module" ]]; then
   then
     cp -f ~/dtlogger/aqms/models.py ~/app/instrumen/datalogger/
     echo "update models.py to ~/app/instrumen/datalogger/"
+    cp -f ~/dtlogger/aqms/db.txt ~/dtlogger/config/
+    echo "copy db.txt"
   else
     echo "no module found"
   fi
