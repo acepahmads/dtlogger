@@ -81,6 +81,17 @@ if [[ $selected_module != "invalid module" ]]; then
   echo "create table warning"
   mysql -ucbi -pcbipa55word wqms_onlimo < datalogger_config_warning.sql
   cd ~
+  echo "To complete the process, a reboot is required"
+  printf "\n"
+  printf "Reboot now : Y(yes) / N(no)"
+  read rboot
+  if [ -z "$rboot" ] || [ $rboot == "N" ] || [ $rboot == "no" ]
+  then
+    printf "Please reboot manual immediately"
+  elif [ $module == "yes" ]
+  then
+    reboot
+  fi
 else
   echo "$selected_module"
 fi
