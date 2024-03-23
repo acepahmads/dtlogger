@@ -1,5 +1,5 @@
 #Don't move this structured
-#Configuration MYSQL (AQMS)
+#Configuration MYSQL (WQMS_ONLIMO)
 
 0.hostname=localhost
 1.username=root
