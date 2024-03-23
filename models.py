@@ -247,12 +247,11 @@ class Parameter(models.Model):
      sock.sendto(message1, (UDP_IP, UDP_PORT))
      sock.setblocking(0)
      ready = select.select([sock], [], [], 1)
-     value="0"
+     value = "0"
      if ready[0]:
       value, addr = sock.recvfrom(1024) # buffer size is 1024 bytes
-      if parameter["output"] == "2":
+      if "output" in parameter and parameter["output"] == "2":
        status = True
-      #print("rcv data",data)
      sock.close()
     except socket.error:
      []
@@ -271,6 +270,28 @@ class Parameter(models.Model):
      print("recv " % data)
     sock.close()
     return data
+  def send_udp_input(message):
+    try:
+     UDP_IP = "127.0.0.1"
+     UDP_PORT = 2042
+     status = False
+     #print("send message input: %s" % message)
+     print("saveinc")
+     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+     message1=bytes(message,'ascii')
+     sock.sendto(message1, (UDP_IP, UDP_PORT))
+     sock.close()
+    except socket.error:
+     []
+  def read_paramid(key):
+    try:
+      sQuery = "SELECT id FROM datalogger_parameters where `key` = '"+ key +"' LIMIT 1"
+      cursor = connection.cursor()
+      cursor.execute(sQuery)
+      result = Helper.fetchone(cursor)
+      return result
+    except:
+      []
   def config_write(connection_id, key):
     try:
       cursor = connection.cursor()
@@ -330,12 +351,15 @@ class Parameter(models.Model):
         #client.write_register(parameter["address"], parameter["data_type"], unit = parameter["uid"])
         print("write",key)
         sQuery = "select * from datalogger_parameters where datalogger_parameters.key='"+key+"'"
-        #print("sQuery:",sQuery)
-        Parameter.send_udp(sQuery,parameter)
+        print("sQuery:",sQuery)
+        Parameter.send_udp(sQuery, parameter)
+        print("sleep")
         time.sleep(0.1)
+        print("status=true")
         write_status = True
+        print("ok")
       except Exception as error:
-        print("[ERROR]", parameter["address"], error)
+        print("[ERROR-W]", parameter["address"], error)
         write_status = False
 
       result = {
@@ -423,10 +447,10 @@ class Parameter(models.Model):
         #read = Parameter.read_parameter(parameter)
         sQuery = "select * from datalogger_parameters where datalogger_parameters.key='"+key+"'"
         #print("sQuery:",sQuery)
-        read=Parameter.send_udp(sQuery,parameter)
+        read = Parameter.send_udp(sQuery,parameter)
         #datar=Parameter.recv_udp()
         #print("data:",data)
-        raw_value=float(read[0])
+        raw_value = float(read[0])
         value = raw_value
         value = value - float(parameter["orchestrator_reduction"])
         value = value * float(parameter["factor"])
@@ -435,19 +459,31 @@ class Parameter(models.Model):
           value = eval(parameter["formula"])
 
         value = value * float(parameter["orchestrator_factor"])
-        print("max", parameter["max_value"])
+        #print("max", parameter["max_value"])
         if parameter["disabled_threshold"] == False and value > parameter["max_value"]:
           value = parameter["max_value"]
           is_threshold_value = True
         elif parameter["disabled_threshold"] == False and value < parameter["min_value"]:
           value = parameter["min_value"]
           is_threshold_value = True
-        print("write_bridge", parameter["max_value"])
+        #print("write_bridge", parameter["max_value"])
         Parameter.write_bridge(connection_id, key, value)
+
+        if (raw_value == 0):
+          paramid = Parameter.read_paramid(key)
+          dtmin = (
+            f"{{\"parameter_id\" : {paramid['id']}, \"raw_value\" : {raw_value}, "
+            f"\"factor\" : {parameter['factor']}, \"disabled_threshold\" : {parameter['disabled_threshold']}, "
+            f"\"orchestrator_reduction\" : {parameter['orchestrator_reduction']}, "
+            f"\"orchestrator_factor\" : {parameter['orchestrator_factor']}, "
+            f"\"min_value\" : {parameter['min_value']}, \"max_value\" : {parameter['max_value']}, "
+            f"\"formula\" : \"{parameter['formula']}\"}}"
+          )
+          Parameter.send_udp_input(dtmin)
 
         time.sleep(1)
       except Exception as error:
-        print("[ERROR]", parameter["id"], error)
+        print("[ERRORR]", parameter["id"], error)
         value = parameter["min_value"]
         is_threshold_value = True
       print(key,"value",value)
