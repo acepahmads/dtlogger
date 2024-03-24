@@ -8,17 +8,19 @@ import json
 
 
 def send_udp_log(message):
-    import socket
-    UDP_IP = "127.0.0.1"
-    UDP_PORT = 2040
-    # print("UDP target IP: %s" % UDP_IP)
-    # print("UDP target port: %s" % UDP_PORT)
-    # print("message: %s" % message)
-    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    message1 = bytes(message, 'ascii')
-    sock.sendto(message1, (UDP_IP, UDP_PORT))
-    sock.close()
-
+    try:
+        import socket
+        UDP_IP = "127.0.0.1"
+        UDP_PORT = 2040
+        # print("UDP target IP: %s" % UDP_IP)
+        # print("UDP target port: %s" % UDP_PORT)
+        # print("message: %s" % message)
+        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        message1 = bytes(message, 'ascii')
+        sock.sendto(message1, (UDP_IP, UDP_PORT))
+        sock.close()
+    except Exception as error:
+      print("An error occurred:", error)
 
 def save_value(data, sql):
     try:
@@ -47,8 +49,9 @@ def save_value(data, sql):
             mycursor.close()
             print("MySQL connection is closed")
 
-    except mysql.connector.Error as e:
-        print("Error reading data from MySQL table", e)
+    except mysql.connector.Error as error:
+        print("Error reading data from MySQL table", error)
+        send_udp_log("inputmodbus#" + "E Reading mysql" + str(error))
 
 
 def main():
@@ -101,10 +104,4 @@ def main():
 
 if __name__ == "__main__":
     main()
-    """
-    if len(sys.argv) > 1:
-        main(sys.argv[1])
-    else:
-        print("invalid argument")
-    """
 
