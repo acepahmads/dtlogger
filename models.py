@@ -252,9 +252,9 @@ class Parameter(models.Model):
       value, addr = sock.recvfrom(1024) # buffer size is 1024 bytes
      if "output" in parameter and parameter["output"] == "2":
       status = True
-     print("status",status)
+     #print("status",status)
      sock.close()
-     print("sockclosed")
+     #print("sockclosed")
     except socket.error:
      []
     return [value, status];
