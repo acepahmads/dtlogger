@@ -351,13 +351,13 @@ class Parameter(models.Model):
         #client.write_register(parameter["address"], parameter["data_type"], unit = parameter["uid"])
         print("write",key)
         sQuery = "select * from datalogger_parameters where datalogger_parameters.key='"+key+"'"
-        print("sQuery:",sQuery)
+        #print("sQuery:",sQuery)
         Parameter.send_udp(sQuery, parameter)
-        print("sleep")
+        #print("sleep")
         time.sleep(0.1)
-        print("status=true")
+        #print("status=true")
         write_status = True
-        print("ok")
+        #print("ok")
       except Exception as error:
         print("[ERROR-W]", parameter["address"], error)
         write_status = False
@@ -403,7 +403,7 @@ class Parameter(models.Model):
 
         if parameter["formula"] != "":
           check_result = eval(parameter["formula"])
-
+        print("read_status", key, check_result)
         if check_result == True:
           result_status = "on"
         time.sleep(1)
