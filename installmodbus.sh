@@ -61,6 +61,7 @@ if [[ $selected_module != "invalid module" ]]; then
   echo "$password" | sudo -S ln -fs ~/dtlogger/runmodbus /bin/runmodbus
   echo "$password" | sudo -S ln -fs ~/dtlogger/killmodbus /bin/killmodbus
   echo "$password" | sudo -S ln -fs ~/dtlogger/checkmodbus /bin/checkmodbus
+  echo "$password" | sudo -S ln -fs ~/dtlogger/echomodbuss1.1 /bin/echomodbus
   echo "$password" | sudo -S ln -fs ~/dtlogger/runmodbus1 /bin/runmodbus1
   echo "$password" | sudo -S ln -fs ~/dtlogger/killmodbus1 /bin/killmodbus1
   echo "make autostart module"
