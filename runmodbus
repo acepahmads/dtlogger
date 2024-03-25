@@ -1,9 +1,10 @@
 echo "cbipa55word" | sudo -S mysql --execute="SET GLOBAL FOREIGN_KEY_CHECKS = 0;" -ucbi -pcbipa55word & >/dev/null
 killmodbus
 cd ~/dtlogger
+echo "cbipa55word" | sudo -S ./logmodbuss1.1 & >/dev/null
+sleep 1
 echo "cbipa55word" | sudo -S ./modbuss1.1 2024 1000000 & >/dev/null
 echo "cbipa55word" | sudo -S ./dbprocesstrigger1.1 & >/dev/null
-echo "cbipa55word" | sudo -S ./logmodbuss1.1 & >/dev/null
 echo "cbipa55word" | sudo -S ./autoresetusb & >/dev/null
 python3 warning.py CBI_INSTRUMEN & >/dev/null
 python3 inputmodbus.py & >/dev/null
