@@ -167,7 +167,7 @@ def main():
 
         now = datetime.datetime.now()
         message = f"{site} [{now}] : The system is started"
-        #send_warning_tele(message)
+        send_warning_tele(message)
     except mysql.connector.Error as e:
         print("Error while connecting to MySQL", e)
         send_udp_log("warning#" + "E connecting to MySQL" + str(e))
@@ -178,8 +178,8 @@ def main():
     while (True):
         now = datetime.datetime.now()
         print(now)
-        #if ((now.minute == 0) and (now.second == 0)):
-        if (now.second == 0):
+        if ((now.minute == 0) and (now.second == 0)):
+        #if (now.second == 0):
             try:
                 cod = 0.00
                 bod = 0.00
