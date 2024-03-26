@@ -167,7 +167,7 @@ def main():
 
         now = datetime.datetime.now()
         message = f"{site} [{now}] : The system is started"
-        send_warning_tele(message)
+        #send_warning_tele(message)
     except mysql.connector.Error as e:
         print("Error while connecting to MySQL", e)
         send_udp_log("warning#" + "E connecting to MySQL" + str(e))
@@ -178,8 +178,8 @@ def main():
     while (True):
         now = datetime.datetime.now()
         print(now)
-        if ((now.minute == 0) and (now.second == 0)):
-        #if (now.second == 0):
+        #if ((now.minute == 0) and (now.second == 0)):
+        if (now.second == 0):
             try:
                 cod = 0.00
                 bod = 0.00
@@ -215,7 +215,7 @@ def main():
                     if ((row[1] == "send_klhk") or (row[1] == "send_portal")):
                         sQuery = f"SELECT datalogger_refrences.identifier FROM datalogger_refrences where datalogger_refrences.created_at between '{fromd}' and '{to}'"
                         if (expression!=""):
-                            sQuery += f" and '{expression}'"
+                            sQuery += f" and {expression}"
                         sQuery += " order by datalogger_refrences.id desc"
                         if ((row[4]) == "check_transmission"):
                             check_transmission(conn, site, sQuery, hour1, (row[5]), fromd, to)
@@ -224,13 +224,11 @@ def main():
                         elif ((row[4]) == "check_gen_refrence"):
                             check_gen_refrence(conn, site, sQuery, hour1, (row[5]), fromd, to)
                     elif (row[1] == "read_value"):
-                        sQuery = ("select p.key, count(v.value) as 'byk_data',ROUND(avg(v.value),4) as 'ratarata' from datalogger_values v "
+                        sQuery = ("select p.key, p.name, MAX(v.value) AS value from datalogger_values v "
                                   "inner join datalogger_refrences r on r.id = v.refrence_id "
                                   "inner join datalogger_parameters p on p.id = v.parameter_id "
-                                  #f"where r.identifier BETWEEN  '{fromd}' AND  '{to}' "
-                                  #f"where r.identifier = '20240304140000' "
                                   f"where r.identifier = '{identifiernow}' "
-                                  "group by left(r.identifier, 12), p.name order by p.name asc, left(r.identifier, 12) desc")
+                                  "GROUP BY p.key, p.name order by p.name asc, left(r.identifier, 12) desc")
                         print(sQuery)
                         cursor.execute(sQuery)
                         rows1 = cursor.fetchall()
@@ -277,6 +275,7 @@ def main():
                     conn.close()
         time.sleep(1)
 if __name__ == "__main__":
+
     main()
 
 
