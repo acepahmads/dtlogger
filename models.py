@@ -6,6 +6,7 @@ import requests
 import socket
 import select
 import channels.layers
+import math
 from os import environ as Env
 from datetime import datetime
 from django.db import models, connection
@@ -399,15 +400,21 @@ class Parameter(models.Model):
         #read = Parameter.read_parameter(client, parameter)
         sQuery = "select * from datalogger_parameters where datalogger_parameters.key='"+key+"'"
         #print("sQuery:",sQuery)
-        read=Parameter.send_udp(sQuery,parameter)
-        value = read[0]
-        status = read[1]
-
+        read = Parameter.send_udp(sQuery, parameter)
         if parameter["formula"] != "":
+          value = read[0]
+          print("value", value)
+          if (value != "0"):
+            fstring = value.decode("utf-8")
+            #print("rvalue", value)
+            if fstring.isdigit():
+              fvalue = float(fstring)
+              value = int(math.floor(fvalue))
+          status = read[1]
           check_result = eval(parameter["formula"])
-        print("read_status", key, check_result)
-        if check_result == True:
-          result_status = "on"
+          print("read_status", key, value, parameter["formula"], check_result)
+          if check_result == True:
+            result_status = "on"
         time.sleep(1)
       except Exception as error:
         print("[ERROR]", parameter["id"], error)
