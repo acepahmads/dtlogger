@@ -82,7 +82,7 @@ if [[ $selected_module != "invalid module" ]]; then
     echo "copy db.txt"
     cp -f ~/dtlogger/aqms/inputmodbus_aqms.py ~/dtlogger/inputmodbus.py
     echo "copy inputmodbus_aqms"
-    cp -f ~/dtlogger/aqms/warning.py ~/dtlogger/warning.py
+    cp -f ~/dtlogger/aqms/warning_aqms.py ~/dtlogger/warning.py
     echo "copy inputmodbus_aqms"
     cd ~/dtlogger/config/
     echo "create table warning"
