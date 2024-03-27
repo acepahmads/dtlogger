@@ -247,7 +247,7 @@ class Parameter(models.Model):
      message1=bytes(message,'ascii')
      sock.sendto(message1, (UDP_IP, UDP_PORT))
      sock.setblocking(0)
-     ready = select.select([sock], [], [], 1)
+     ready = select.select([sock], [], [], 2)
      value = "0"
      if ready[0]:
       value, addr = sock.recvfrom(1024) # buffer size is 1024 bytes
@@ -357,7 +357,7 @@ class Parameter(models.Model):
         #print("sQuery:",sQuery)
         Parameter.send_udp(sQuery, parameter)
         #print("sleep")
-        time.sleep(0.1)
+        #time.sleep(0.1)
         #print("status=true")
         write_status = True
         #print("ok")
@@ -398,12 +398,13 @@ class Parameter(models.Model):
 
       try:
         #read = Parameter.read_parameter(client, parameter)
+        #time.sleep(1)
         sQuery = "select * from datalogger_parameters where datalogger_parameters.key='"+key+"'"
         #print("sQuery:",sQuery)
         read = Parameter.send_udp(sQuery, parameter)
         if parameter["formula"] != "":
           value = read[0]
-          print("value", value)
+          #print("value", value)
           if (value != "0"):
             fstring = value.decode("utf-8")
             #print("rvalue", value)
@@ -415,7 +416,6 @@ class Parameter(models.Model):
           print("read_status", key, value, parameter["formula"], check_result)
           if check_result == True:
             result_status = "on"
-        time.sleep(1)
       except Exception as error:
         print("[ERROR]", parameter["id"], error)
 
