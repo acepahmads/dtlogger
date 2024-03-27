@@ -71,6 +71,9 @@ if [[ $selected_module != "invalid module" ]]; then
   if [[ $selected_module == "wqms_onlimo" ]]; then
     cp -f ~/dtlogger/models.py ~/app/instrumen/datalogger/models/
     echo "update models.py to ~/app/instrumen/datalogger/models/"
+    cd ~/dtlogger/config/
+    echo "create table warning"
+    mysql -ucbi -pcbipa55word wqms_onlimo < datalogger_config_warning.sql
   elif [ $selected_module == "aqms" ];
   then
     cp -f ~/dtlogger/aqms/models.py ~/app/instrumen/datalogger/
@@ -79,12 +82,12 @@ if [[ $selected_module != "invalid module" ]]; then
     echo "copy db.txt"
     cp -f ~/dtlogger/aqms/inputmodbus_aqms.py ~/dtlogger/inputmodbus.py
     echo "copy inputmodbus_aqms"
+    cd ~/dtlogger/config/
+    echo "create table warning"
+    mysql -ucbi -pcbipa55word aqms < datalogger_config_warning.sql
   else
     echo "no module found"
   fi
-  cd ~/dtlogger/config/
-  echo "create table warning"
-  mysql -ucbi -pcbipa55word wqms_onlimo < datalogger_config_warning.sql
   cd ~
   echo "To complete the process, a reboot is required"
   printf "\n"
