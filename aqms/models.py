@@ -172,12 +172,12 @@ class Parameter(models.Model):
      sock.sendto(message1, (UDP_IP, UDP_PORT))
      sock.setblocking(0)
      ready = select.select([sock], [], [], 2)
-     value="0"
+     value = "0"
      if ready[0]:
       value, addr = sock.recvfrom(1024) # buffer size is 1024 bytes
-      if parameter["output"] == "2":
+     if "output" in parameter and parameter["output"] == "2":
        status = True
-      #print("rcv data",data)
+     #print("rcv data",data)
      sock.close()
     except socket.error:
      []
@@ -196,7 +196,28 @@ class Parameter(models.Model):
      print("recv " % data)
     sock.close()
     return data
-
+  def send_udp_input(message):
+    try:
+     UDP_IP = "127.0.0.1"
+     UDP_PORT = 2042
+     status = False
+     #print("send message input: %s" % message)
+     print("saveinc")
+     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+     message1=bytes(message,'ascii')
+     sock.sendto(message1, (UDP_IP, UDP_PORT))
+     sock.close()
+    except socket.error:
+     []
+  def read_paramid(key):
+    try:
+      sQuery = "SELECT id FROM datalogger_parameters where `key` = '"+ key +"' LIMIT 1"
+      cursor = connection.cursor()
+      cursor.execute(sQuery)
+      result = Helper.fetchone(cursor)
+      return result
+    except:
+      []
   def config_write(connection_id, key):
     try:
       cursor = connection.cursor()
@@ -258,10 +279,13 @@ class Parameter(models.Model):
         sQuery = "select * from datalogger_parameters where datalogger_parameters.key='"+key+"'"
         #print("sQuery:",sQuery)
         Parameter.send_udp(sQuery,parameter)
-        time.sleep(0.1)
+        #print("sleep")
+        #time.sleep(0.1)
+        #print("status=true")
         write_status = True
+        #print("ok")
       except Exception as error:
-        print("[ERROR]", parameter["address"], error)
+        print("[ERROR-W]", parameter["address"], error)
         write_status = False
 
       result = {
@@ -305,11 +329,20 @@ class Parameter(models.Model):
         status = read[1]
 
         if parameter["formula"] != "":
+          #value = read[0]
+          #print("value", value)
+          if (value != "0"):
+            fstring = value.decode("utf-8")
+            #print("rvalue", value)
+            if fstring.isdigit():
+              fvalue = float(fstring)
+              value = int(math.floor(fvalue))
+          #status = read[1]
           check_result = eval(parameter["formula"])
-
-        if check_result == True:
-          result_status = "on"
-        time.sleep(1)
+          print("read_status", key, value, parameter["formula"], check_result)
+          if check_result == True:
+            result_status = "on"
+          check_result = eval(parameter["formula"])
       except Exception as error:
         print("[ERROR]", parameter["id"], error)
 
@@ -333,7 +366,7 @@ class Parameter(models.Model):
         #client = AppHelper.modbus_connection(connection)
         #client.connect()
         for key in keys:
-          print("read values", key)
+          #print("read values", key)
           results.append(Parameter.read_value(connection["id"], key))
         #client.close()
       except Exception as error:
@@ -351,10 +384,10 @@ class Parameter(models.Model):
         #read = Parameter.read_parameter(parameter)
         sQuery = "select * from datalogger_parameters where datalogger_parameters.key='"+key+"'"
         #print("sQuery:",sQuery)
-        read=Parameter.send_udp(sQuery,parameter)
+        read = Parameter.send_udp(sQuery,parameter)
         #datar=Parameter.recv_udp()
         #print("data:",data)
-        raw_value=float(read[0])
+        raw_value = float(read[0])
         value = raw_value
         value = value - float(parameter["orchestrator_reduction"])
         value = value * float(parameter["factor"])
@@ -372,6 +405,18 @@ class Parameter(models.Model):
           is_threshold_value = True
         #print("write_bridge", parameter["max_value"])
         Parameter.write_bridge(connection_id, key, value)
+
+        if (raw_value == 0):
+          paramid = Parameter.read_paramid(key)
+          dtmin = (
+            f"{{\"parameter_id\" : {paramid['id']}, \"raw_value\" : {raw_value}, "
+            f"\"factor\" : {parameter['factor']}, \"disabled_threshold\" : {parameter['disabled_threshold']}, "
+            f"\"orchestrator_reduction\" : {parameter['orchestrator_reduction']}, "
+            f"\"orchestrator_factor\" : {parameter['orchestrator_factor']}, "
+            f"\"min_value\" : {parameter['min_value']}, \"max_value\" : {parameter['max_value']}, "
+            f"\"formula\" : \"{parameter['formula']}\"}}"
+          )
+          Parameter.send_udp_input(dtmin)
 
         time.sleep(1)
       except Exception as error:
