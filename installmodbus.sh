@@ -88,13 +88,14 @@ if [[ $selected_module != "invalid module" ]]; then
   cd ~
   echo "To complete the process, a reboot is required"
   printf "\n"
-  printf "Reboot now : Y(yes) / N(no)"
+  printf "Reboot now, Y(yes) / N(no) : "
   read rboot
-  if [ -z "$rboot" ] || [ $rboot == "N" ] || [ $rboot == "no" ]
+  if [ -z "$rboot" ] || [ $rboot == "N" ] || [ $rboot == "no" ] || [ $rboot == "n" ]
   then
     printf "Please reboot manual immediately"
-  elif [ $module == "yes" ]
+  elif [ $rboot == "yes" ] || [ $rboot == "y" ] || [ $rboot == "Y" ]
   then
+    printf "reboot"
     reboot
   fi
 else
