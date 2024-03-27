@@ -147,8 +147,9 @@ def check_gen_refrence(conn, site, sQuery, h_hour, msg, fromd, to):
         print("An unexpected error occurred:", e)
         send_udp_log("warning#" + "E check message waiting" + str(e))
 
-def main():
+def main(site):
     try:
+        """
         site = "CBI Instrumen"
         conn = mysql.connector.connect(
             host=host,
@@ -164,7 +165,7 @@ def main():
         if conn.is_connected():
             cursor.close()
             conn.close()
-
+        """
         now = datetime.datetime.now()
         message = f"{site} [{now}] : The system is started"
         send_warning_tele(message)
@@ -275,7 +276,9 @@ def main():
                     conn.close()
         time.sleep(1)
 if __name__ == "__main__":
-
-    main()
+    if len(sys.argv) > 1:
+        main(sys.argv[1])
+    else:
+        print("invalid argument")
 
 
