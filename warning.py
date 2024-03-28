@@ -188,8 +188,8 @@ def main():
     while (True):
         now = datetime.datetime.now()
         print(now)
-        #if ((now.minute == 0) and (now.second == 0)):
-        if (now.second == 0):
+        if ((now.minute == 0) and (now.second == 0)):
+        #if (now.second == 0):
             try:
                 bod = 0.00
                 capacity = 0.00
