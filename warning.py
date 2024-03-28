@@ -216,6 +216,7 @@ def main():
                 tss = 0.00
                 turbidity = 0.00
                 volt = 0.00
+                message1 = ""
 
                 flg = False
                 conn = mysql.connector.connect(
@@ -349,11 +350,13 @@ def main():
                         print(valuestuck)
                         if (check_stuck(valuestuck, row[3])):
                             print(row[4], "stuck")
+                            if (message1 != ""):
+                                message1 += ", "
+                            message1 += row[5]
 
                 if conn.is_connected():
                     cursor.close()
                     conn.close()
-                message1 = ""
                 if (flg == True):
                     names = data_dict.keys()
                     for row in rows:
