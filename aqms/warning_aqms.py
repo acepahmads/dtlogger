@@ -218,6 +218,7 @@ def main():
                 cursor = conn.cursor()
                 cursor.execute("SELECT * FROM datalogger_config_warning order by id asc")
                 rows = cursor.fetchall()
+                message1 = ""
                 for row in rows:
                     now = datetime.datetime.now()
                     print("method:", row[1], "| expression:", row[3], "| h-hor:", row[2], "| key", row[4], "| min_tolerance",
@@ -324,11 +325,12 @@ def main():
                         print(valuestuck)
                         if (check_stuck(valuestuck, row[3])):
                             print(row[4], "stuck")
-
+                            if (message1 != ""):
+                                message1 += ", "
+                            message1 += row[5]
                 if conn.is_connected():
                     cursor.close()
                     conn.close()
-                message1 = ""
                 if (flg == True):
                     names = data_dict.keys()
                     for row in rows:
