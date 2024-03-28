@@ -151,10 +151,10 @@ def check_stuck(values, expression):
             ret = False
     return ret
 
-def main():
+def main(site):
     try:
         data_dict = {"test": ""}
-        site = "CBI Instrumen"
+        #site = "CBI Instrumen"
         conn = mysql.connector.connect(
             host=host,
             user=user,
@@ -165,7 +165,7 @@ def main():
         rows = cursor.fetchone()
         for row in rows:
             print("config", row)
-            site = row
+            #site = row
 
         cursor.execute("select `key` from datalogger_parameters where status='1' and function_code != '06' order by `key` asc")
         rows = cursor.fetchall()
@@ -384,7 +384,8 @@ def main():
                     conn.close()
         time.sleep(1)
 if __name__ == "__main__":
-
-    main()
-
+    if len(sys.argv) > 1:
+        main(sys.argv[1])
+    else:
+        print("invalid argument")
 
