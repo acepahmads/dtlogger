@@ -9,22 +9,8 @@ host = 'localhost'
 database = 'aqms'
 user = 'cbi'
 password = 'cbipa55word'
-data_dict = {
-    "cod": "",
-    "bod": "",
-    "toc": "",
-    "tss": "",
-    "turbidity": "",
-    "ph": "",
-    "amonia": "",
-    "nitrat": "",
-    "do": "",
-    "salinity": "",
-    "tds": "",
-    "depth": "",
-    "temperature": ""
-}
-
+data_dict = {"test": ""}
+data_dict1 = {"test1": ""}
 def send_udp_log(message):
     try:
         import socket
@@ -147,9 +133,27 @@ def check_gen_refrence(conn, site, sQuery, h_hour, msg, fromd, to):
         print("An unexpected error occurred:", e)
         send_udp_log("warning#" + "E check message waiting" + str(e))
 
-def main(site):
+def check_stuck(values, expression):
+    last_value = values[0]
+    count = 0
+    ret = False
+    for value in values:
+        print("value", value, "last_value", last_value)
+        if value != last_value:
+            count = 0
+            last_value = value
+        else:
+            count += 1
+        print("counter", count)
+        if (eval(expression)):
+            ret = True
+        else:
+            ret = False
+    return ret
+
+def main():
     try:
-        """
+        data_dict = {"test": ""}
         site = "CBI Instrumen"
         conn = mysql.connector.connect(
             host=host,
@@ -162,10 +166,15 @@ def main(site):
         for row in rows:
             print("config", row)
             site = row
+
+        cursor.execute("select `key` from datalogger_parameters where status='1' and function_code != '06' order by `key` asc")
+        rows = cursor.fetchall()
+        data_dict = {str(row[0]): "" for row in rows}
+        print("dict", data_dict)
         if conn.is_connected():
             cursor.close()
             conn.close()
-        """
+
         now = datetime.datetime.now()
         message = f"{site} [{now}] : The system is started"
         send_warning_tele(message)
@@ -179,12 +188,27 @@ def main(site):
     while (True):
         now = datetime.datetime.now()
         print(now)
-        if ((now.minute == 0) and (now.second == 0)):
-        #if (now.second == 0):
+        #if ((now.minute == 0) and (now.second == 0)):
+        if (now.second == 0):
             try:
-                cod = 0.00
-                bod = 0.00
-                tss = 0.00
+                air_pressure = 0.00
+                co = 0.00
+                flow = 0.00
+                hc = 0.00
+                humidity = 0.00
+                no2 = 0.00
+                noise = 0.00
+                o3 = 0.00
+                pm10 = 0.00
+                pm2_5 = 0.00
+                rain_fall = 0.00
+                so2 = 0.00
+                solar_radiation = 0.00
+                temperature = 0.00
+                tvoc = 0.00
+                w_speed = 0.00
+                wind_angle = 0.00
+
                 flg = False
                 conn = mysql.connector.connect(
                     host=host,
@@ -196,7 +220,8 @@ def main(site):
                 rows = cursor.fetchall()
                 for row in rows:
                     now = datetime.datetime.now()
-                    print("method:",row[1],"| expression:",row[3],"| h-hor:",row[2],"| key", row[4])
+                    print("method:", row[1], "| expression:", row[3], "| h-hor:", row[2], "| key", row[4], "| min_tolerance",
+                          row[6], "| min_tolerance", row[7])
                     key = row[4]
                     expression = row[3]
                     hour1 = int(row[2])
@@ -210,6 +235,7 @@ def main(site):
                     one_hour = datetime.timedelta(hours=(hour1))
                     one_hour_ago = now - one_hour
                     to1 = one_hour_ago.strftime("%Y-%m-%d %H:%M")
+                    identifierfrom = one_hour_ago.strftime("%Y%m%d") + "000000"
                     identifiernow = one_hour_ago.strftime("%Y%m%d%H%M")+"00"
                     to = str(to1) + ":00"
                     print("to", to)
@@ -229,6 +255,7 @@ def main(site):
                                   "inner join datalogger_refrences r on r.id = v.refrence_id "
                                   "inner join datalogger_parameters p on p.id = v.parameter_id "
                                   f"where r.identifier = '{identifiernow}' "
+                                  #f"where r.identifier = '20240328090000' "
                                   "GROUP BY p.key, p.name order by p.name asc, left(r.identifier, 12) desc")
                         print(sQuery)
                         cursor.execute(sQuery)
@@ -245,40 +272,117 @@ def main(site):
                             #print("name", name)
                             if (name == key):
                                 print(name, data_dict[f'{key}'])
-                                if (name == "cod"):
-                                    cod = data_dict[f'{key}']
-                                elif (name == "bod"):
-                                    bod = data_dict[f'{key}']
-                                elif (name == "tss"):
-                                    tss = data_dict[f'{key}']
+                                if (name == "air_pressure"):
+                                    air_pressure = data_dict[f'{key}']
+                                elif (name == "co"):
+                                    co = data_dict[f'{key}']
+                                elif (name == "flow"):
+                                    flow = data_dict[f'{key}']
+                                elif (name == "hc"):
+                                    hc = data_dict[f'{key}']
+                                elif (name == "humidity"):
+                                    humidity = data_dict[f'{key}']
+                                elif (name == "no2"):
+                                    no2 = data_dict[f'{key}']
+                                elif (name == "noise"):
+                                    noise = data_dict[f'{key}']
+                                elif (name == "o3"):
+                                    o3 = data_dict[f'{key}']
+                                elif (name == "pm10"):
+                                    pm10 = data_dict[f'{key}']
+                                elif (name == "pm2_5"):
+                                    pm2_5 = data_dict[f'{key}']
+                                elif (name == "rain_fall"):
+                                    rain_fall = data_dict[f'{key}']
+                                elif (name == "so2"):
+                                    so2 = data_dict[f'{key}']
+                                elif (name == "solar_radiation"):
+                                    solar_radiation = data_dict[f'{key}']
+                                elif (name == "temperature"):
+                                    temperature = data_dict[f'{key}']
+                                elif (name == "tvoc"):
+                                    tvoc = data_dict[f'{key}']
+                                elif (name == "w_speed"):
+                                    w_speed = data_dict[f'{key}']
+                                elif (name == "wind_angle"):
+                                    wind_angle = data_dict[f'{key}']
+                    elif (row[1] == "stuck_value"):
+                        sQuery = ("select left(r.identifier, 12), p.name, count(v.value) as 'byk_data', "
+                                  "ROUND(avg(v.value),4) as 'ratarata' from datalogger_values v "
+                                  "inner join datalogger_refrences r on r.id = v.refrence_id "
+                                  "inner join datalogger_parameters p on p.id = v.parameter_id "
+                                  f"where r.identifier BETWEEN '{identifierfrom}' AND  '{identifiernow}' "
+                                  f"and p.key = '{row[4]}' "
+                                  "group by left(r.identifier, 12), p.name "
+                                  "order by p.name asc, left(r.identifier, 12) desc")
+                        print(sQuery)
+                        cursor.execute(sQuery)
+                        rows2 = cursor.fetchall()
+                        valuestuck = []
+                        for row2 in rows2:
+                            valuestuck.append(row2[3])
+                        print(valuestuck)
+                        if (check_stuck(valuestuck, row[3])):
+                            print(row[4], "stuck")
+
                 if conn.is_connected():
                     cursor.close()
                     conn.close()
+                message1 = ""
                 if (flg == True):
                     names = data_dict.keys()
                     for row in rows:
-                        for name in names:
-                            if (name == row[4]):
-                                print("cod", cod, "bod", bod, "tss", tss)
-                                value = data_dict[f'{row[4]}']
-                                if (value != ""):
-                                    print("expression:", row[3], name, "value:", value)
-                                    if (eval(row[3])):
-                                        print(name,"Anomali")
+                        if (row[1] == "read_value"):
+                            for name in names:
+                                if (name == row[4]):
+                                    value = data_dict[f'{row[4]}']
+                                    print("checking", name, value)
+                                    print("expression:", row[3], name, "value:", value, "min", row[6], "max", row[7])
+                                    if (value != ""):
+                                        min = 0
+                                        max = 0
+                                        if ((row[6] != "") and (row[6]) != None):
+                                            min1 = eval(row[6])
+                                            min = eval(min1)
+                                        elif ((row[7] != "") and (row[7]) != None):
+                                            max1 = eval(row[7])
+                                            max = eval(max1)
+                                        print("min", min, "max", max)
+                                        if (eval(row[3])):
+                                            print("float(value)", float(value), "min", min)
+                                            value = float(value) + min
+                                            print("valuemin", value)
+                                            if (eval(row[3])):
+                                                print("float(value)", float(value), "max", max)
+                                                value = float(value) - max
+                                                print("valuemax", max)
+                                                if (eval(row[3])):
+                                                    print(name, "Anomali")
+                                                    if (message1 != ""):
+                                                        message1 += ", "
+                                                    message1 += row[5]
+                                    else:
+                                        message1 += name + "no value"
                                     break
+                if (message1 != ""):
+                    message = f"{site} [{now}] : " + message1
+                    send_warning_tele(message)
+
+
+
             except mysql.connector.Error as e:
                 print("Error while connecting to MySQL", e)
+                send_udp_log("warning#" + "E Error while connecting to MySQL" + str(e))
             except Exception as e:
                 print("An unexpected error occurred:", e)
+                send_udp_log("warning#" + "E An unexpected error occurred:" + str(e))
             finally:
                 if conn.is_connected():
                     cursor.close()
                     conn.close()
         time.sleep(1)
 if __name__ == "__main__":
-    if len(sys.argv) > 1:
-        main(sys.argv[1])
-    else:
-        print("invalid argument")
+
+    main()
 
 
