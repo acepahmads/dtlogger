@@ -793,8 +793,8 @@ class Value(models.Model):
       cursor = connection.cursor()
       cursor.execute("SELECT dv.* FROM datalogger_values dv WHERE dv.refrence_id = %s;", [id])
       result = AppHelper.fetchall(cursor)
-      print("[datetime now  ] ",datetime.now());
-      print("[values refid  ] ",id);
+      #print("[datetime now  ] ",datetime.now());
+      #print("[values refid  ] ",id);
       return result
     except:
       []
@@ -817,19 +817,19 @@ class Value(models.Model):
       cursor = connection.cursor()
       cursor.execute("SELECT dv.* FROM datalogger_values dv, datalogger_refrences dr, datalogger_parameters dp WHERE dv.refrence_id = dr.id AND dr.identifier = %(refrence)s AND dp.id = dv.parameter_id AND dp.key = %(parameter)s ORDER BY dv.updated_at DESC, dv.value DESC LIMIT 1;", {"refrence": refrence, "parameter": parameter})
       result = AppHelper.fetchone(cursor)
-      print("[datetime now  ] ",datetime.now());
-      print("[identifier    ] ",refrence);
-      print("[parameterid   ] ",parameter);
-      print("[value Refrence] ",result);
+      #print("[datetime now  ] ",datetime.now());
+      #print("[identifier    ] ",refrence);
+      #print("[parameterid   ] ",parameter);
+      #print("[value Refrence] ",result);
       if result == {}:
         cursor.execute(
           "SELECT dv.* FROM datalogger_values dv, datalogger_refrences dr, datalogger_parameters dp WHERE dv.refrence_id = dr.id AND dr.identifier = %(refrence)s AND dp.id = dv.parameter_id AND dp.key = %(parameter)s ORDER BY dv.updated_at DESC, dv.value DESC LIMIT 1;",
           {"refrence": refrence, "parameter": parameter})
         result = AppHelper.fetchone(cursor)
-        print("[datetime now2 ] ", datetime.now())
-        print("[identifier2   ] ", refrence)
-        print("[parameterid2  ] ", parameter)
-        print("[value Refrenc2] ", result)
+        #print("[datetime now2 ] ", datetime.now())
+        #print("[identifier2   ] ", refrence)
+        #print("[parameterid2  ] ", parameter)
+        #print("[value Refrenc2] ", result)
       else :
         print("Data ok")      
       return result
