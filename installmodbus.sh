@@ -85,6 +85,7 @@ if [[ $selected_module != "invalid module" ]]; then
     echo "copy inputmodbus_aqms"
     cp -f ~/dtlogger/aqms/warning_aqms.py ~/dtlogger/warning.py
     echo "copy inputmodbus_aqms"
+    cp -f ~/dtlogger/aqms/datalogger_config_warning_aqms.sql ~/dtlogger/config/datalogger_config_warning.sql
     cd ~/dtlogger/config/
     echo "create table warning"
     mysql -ucbi -pcbipa55word aqms < datalogger_config_warning.sql    
