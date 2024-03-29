@@ -365,7 +365,7 @@ def main(site):
                                                     print(name, "Anomali")
                                                     if (message1 != ""):
                                                         message1 += ", "
-                                                    message1 += row[5]
+                                                    message1 += row[5] + " " + row[3]
                                     else:
                                         message1 += name + "no value"
                                     break
