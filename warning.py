@@ -345,15 +345,18 @@ def main():
                         cursor.execute(sQuery)
                         rows2 = cursor.fetchall()
                         valuestuck = []
-                        for row2 in rows2:
-                            valuestuck.append(row2[3])
-                        print(valuestuck)
-                        if (check_stuck(valuestuck, row[3])):
-                            print(row[4], "stuck")
-                            if (message1 != ""):
-                                message1 += ", "
-                            message1 += row[5]
-
+                        if (valuestuck != []):
+                            for row2 in rows2:
+                                valuestuck.append(row2[3])
+                            print(valuestuck)
+                            if (check_stuck(valuestuck, row[3])):
+                                print(row[4], "stuck")
+                                if (message1 != ""):
+                                    message1 += ", "
+                                message1 += row[5]
+                                message1 += row[5]
+                        else:
+                            message1 += row[4] + " no value"
                 if conn.is_connected():
                     cursor.close()
                     conn.close()
@@ -390,7 +393,9 @@ def main():
                                                         message1 += ", "
                                                     message1 += row[5]
                                     else:
-                                        message1 += name + "no value"
+                                        if (message1 != ""):
+                                            message1 += ", "
+                                        message1 += name + " no value"
                                     break
                 if (message1 != ""):
                     message = f"{site} [{now}] : " + message1
