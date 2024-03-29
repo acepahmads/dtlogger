@@ -354,7 +354,6 @@ def main():
                                 if (message1 != ""):
                                     message1 += ", "
                                 message1 += row[5]
-                                message1 += row[5]
                         else:
                             message1 += row[4] + " no value"
                 if conn.is_connected():
@@ -391,7 +390,7 @@ def main():
                                                     print(name, "Anomali")
                                                     if (message1 != ""):
                                                         message1 += ", "
-                                                    message1 += row[5]
+                                                    message1 += row[5] + " " + row[3]
                                     else:
                                         if (message1 != ""):
                                             message1 += ", "
