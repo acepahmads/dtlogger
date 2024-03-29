@@ -138,13 +138,13 @@ def check_stuck(values, expression):
     count = 0
     ret = False
     for value in values:
-        print("value", value, "last_value", last_value)
+        #print("value", value, "last_value", last_value)
         if value != last_value:
             count = 0
             last_value = value
         else:
             count += 1
-        print("counter", count)
+        #print("counter", count)
         if (eval(expression)):
             ret = True
         else:
@@ -216,7 +216,6 @@ def main():
                 tss = 0.00
                 turbidity = 0.00
                 volt = 0.00
-                message1 = ""
 
                 flg = False
                 conn = mysql.connector.connect(
@@ -227,9 +226,10 @@ def main():
                 cursor = conn.cursor()
                 cursor.execute("SELECT * FROM datalogger_config_warning order by id asc")
                 rows = cursor.fetchall()
+                message1 = ""
                 for row in rows:
                     now = datetime.datetime.now()
-                    print("method:", row[1], "| expression:", row[3], "| h-hor:", row[2], "| key", row[4], "| min_tolerance",
+                    print("\nmethod:", row[1], "| expression:", row[3], "| h-hor:", row[2], "| key", row[4], "| min_tolerance",
                           row[6], "| min_tolerance", row[7])
                     key = row[4]
                     expression = row[3]
@@ -265,6 +265,7 @@ def main():
                                   "inner join datalogger_parameters p on p.id = v.parameter_id "
                                   f"where r.identifier = '{identifiernow}' "
                                   #f"where r.identifier = '20240328090000' "
+                                  f"and p.key = '{row[4]}' "
                                   "GROUP BY p.key, p.name order by p.name asc, left(r.identifier, 12) desc")
                         print(sQuery)
                         cursor.execute(sQuery)
@@ -345,10 +346,10 @@ def main():
                         cursor.execute(sQuery)
                         rows2 = cursor.fetchall()
                         valuestuck = []
+                        for row2 in rows2:
+                            valuestuck.append(row2[3])
+                        print(valuestuck)
                         if (valuestuck != []):
-                            for row2 in rows2:
-                                valuestuck.append(row2[3])
-                            print(valuestuck)
                             if (check_stuck(valuestuck, row[3])):
                                 print(row[4], "stuck")
                                 if (message1 != ""):
@@ -366,8 +367,9 @@ def main():
                             for name in names:
                                 if (name == row[4]):
                                     value = data_dict[f'{row[4]}']
-                                    print("checking", name, value)
+                                    print("\nchecking", name, value)
                                     print("expression:", row[3], name, "value:", value, "min", row[6], "max", row[7])
+                                    expression = row[3]
                                     if (value != ""):
                                         min = 0
                                         max = 0
@@ -389,8 +391,8 @@ def main():
                                                 if (eval(row[3])):
                                                     print(name, "Anomali")
                                                     if (message1 != ""):
-                                                        message1 += ", "
-                                                    message1 += row[5] + " " + row[3]
+                                                        message1 += "\n"
+                                                    message1 += eval(row[5])
                                     else:
                                         if (message1 != ""):
                                             message1 += ", "
@@ -398,6 +400,7 @@ def main():
                                     break
                 if (message1 != ""):
                     message = f"{site} [{now}] : " + message1
+                    print(message)
                     send_warning_tele(message)
 
 
