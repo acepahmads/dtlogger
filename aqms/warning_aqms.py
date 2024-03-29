@@ -165,7 +165,7 @@ def main(site):
         rows = cursor.fetchone()
         for row in rows:
             print("config", row)
-            site = row
+            #site = row
 
         cursor.execute("select `key` from datalogger_parameters where status='1' and function_code != '06' order by `key` asc")
         rows = cursor.fetchall()
