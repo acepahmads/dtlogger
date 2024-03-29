@@ -165,7 +165,7 @@ def main(site):
         rows = cursor.fetchone()
         for row in rows:
             print("config", row)
-            #site = row
+            site = row
 
         cursor.execute("select `key` from datalogger_parameters where status='1' and function_code != '06' order by `key` asc")
         rows = cursor.fetchall()
@@ -323,11 +323,14 @@ def main(site):
                         for row2 in rows2:
                             valuestuck.append(row2[3])
                         print(valuestuck)
-                        if (check_stuck(valuestuck, row[3])):
-                            print(row[4], "stuck")
-                            if (message1 != ""):
-                                message1 += ", "
-                            message1 += row[5]
+                        if (valuestuck != []):
+                            if (check_stuck(valuestuck, row[3])):
+                                print(row[4], "stuck")
+                                if (message1 != ""):
+                                    message1 += ", "
+                                message1 += row[5]
+                        else:
+                            message1 += row[4] + " no value"
                 if conn.is_connected():
                     cursor.close()
                     conn.close()
