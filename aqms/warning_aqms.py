@@ -82,7 +82,7 @@ def check_transmission(conn, site, sQuery, h_hour, msg, fromd, to):
         startday1 = fromd
         startday = datetime.datetime.strptime(startday1, "%Y-%m-%d %H:%M:%S")
         duration = now - startday
-        data_sent = int(duration.seconds / 3600) - int(h_hour)
+        data_sent = (int(duration.seconds / 3600) - int(h_hour)) * 2
         if (data_sent < 0):
             data_sent = 0
         print("Data must be sent", data_sent, "times")
@@ -138,13 +138,13 @@ def check_stuck(values, expression):
     count = 0
     ret = False
     for value in values:
-        print("value", value, "last_value", last_value)
+        #print("value", value, "last_value", last_value)
         if value != last_value:
             count = 0
             last_value = value
         else:
             count += 1
-        print("counter", count)
+        #print("counter", count)
         if (eval(expression)):
             ret = True
         else:
@@ -221,7 +221,7 @@ def main(site):
                 message1 = ""
                 for row in rows:
                     now = datetime.datetime.now()
-                    print("method:", row[1], "| expression:", row[3], "| h-hor:", row[2], "| key", row[4], "| min_tolerance",
+                    print("\nmethod:", row[1], "| expression:", row[3], "| h-hor:", row[2], "| key", row[4], "| min_tolerance",
                           row[6], "| min_tolerance", row[7])
                     key = row[4]
                     expression = row[3]
@@ -256,7 +256,8 @@ def main(site):
                                   "inner join datalogger_refrences r on r.id = v.refrence_id "
                                   "inner join datalogger_parameters p on p.id = v.parameter_id "
                                   f"where r.identifier = '{identifiernow}' "
-                                  #f"where r.identifier = '20240328090000' "
+                                  #f"where r.identifier = '20240329130000' "
+                                  f"and p.key = '{row[4]}' "
                                   "GROUP BY p.key, p.name order by p.name asc, left(r.identifier, 12) desc")
                         print(sQuery)
                         cursor.execute(sQuery)
@@ -291,7 +292,7 @@ def main(site):
                                     o3 = data_dict[f'{key}']
                                 elif (name == "pm10"):
                                     pm10 = data_dict[f'{key}']
-                                elif (name == "pm2_5"):
+                                elif (name == "pm2.5"):
                                     pm2_5 = data_dict[f'{key}']
                                 elif (name == "rain_fall"):
                                     rain_fall = data_dict[f'{key}']
@@ -341,8 +342,9 @@ def main(site):
                             for name in names:
                                 if (name == row[4]):
                                     value = data_dict[f'{row[4]}']
-                                    print("checking", name, value)
+                                    print("\nchecking", name, value)
                                     print("expression:", row[3], name, "value:", value, "min", row[6], "max", row[7])
+                                    expression = row[3]
                                     if (value != ""):
                                         min = 0
                                         max = 0
@@ -364,13 +366,16 @@ def main(site):
                                                 if (eval(row[3])):
                                                     print(name, "Anomali")
                                                     if (message1 != ""):
-                                                        message1 += ", "
-                                                    message1 += row[5] + " " + row[3]
+                                                        message1 += "\n"
+                                                    message1 += eval(row[5])
                                     else:
+                                        if (message1 != ""):
+                                            message1 += ", "
                                         message1 += name + "no value"
                                     break
                 if (message1 != ""):
                     message = f"{site} [{now}] : " + message1
+                    print(message)
                     send_warning_tele(message)
 
 
