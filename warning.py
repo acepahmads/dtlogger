@@ -339,6 +339,7 @@ def main():
                                   "inner join datalogger_refrences r on r.id = v.refrence_id "
                                   "inner join datalogger_parameters p on p.id = v.parameter_id "
                                   f"where r.identifier BETWEEN '{identifierfrom}' AND  '{identifiernow}' "
+                                  #f"where r.identifier = '20240330080000' "
                                   f"and p.key = '{row[4]}' "
                                   "group by left(r.identifier, 12), p.name "
                                   "order by p.name asc, left(r.identifier, 12) desc")
@@ -353,7 +354,7 @@ def main():
                             if (check_stuck(valuestuck, row[3])):
                                 print(row[4], "stuck")
                                 if (message1 != ""):
-                                    message1 += ", "
+                                    message1 += "\n"
                                 message1 += row[5]
                         else:
                             message1 += row[4] + " no value"
@@ -379,23 +380,29 @@ def main():
                                         elif ((row[7] != "") and (row[7]) != None):
                                             max1 = eval(row[7])
                                             max = eval(max1)
-                                        print("min", min, "max", max)
-                                        if (eval(row[3])):
+                                        print("min", min, "max", max, eval(str(eval(row[3]))))
+                                        if (eval(str(eval(row[3])))):
                                             print("float(value)", float(value), "min", min)
                                             value = float(value) + min
-                                            print("valuemin", value)
-                                            if (eval(row[3])):
+                                            print("valuemin", value, eval(row[3]))
+                                            if (eval(str(eval(row[3])))):
                                                 print("float(value)", float(value), "max", max)
                                                 value = float(value) - max
-                                                print("valuemax", max)
-                                                if (eval(row[3])):
+                                                print("valuemax", max, eval(row[3]))
+                                                if (eval(str(eval(row[3])))):
                                                     print(name, "Anomali")
                                                     if (message1 != ""):
                                                         message1 += "\n"
+                                                    expression = eval(expression)
+                                                    #locvar = {'value': value, 'expression': eval(expression)}
+                                                    print("expression", expression)
+
+                                                    #result = eval(f'f"{row[5]}"', {}, locvar)
+                                                    #print("result", result)
                                                     message1 += eval(row[5])
                                     else:
                                         if (message1 != ""):
-                                            message1 += ", "
+                                            message1 += "\n"
                                         message1 += name + " no value"
                                     break
                 if (message1 != ""):
@@ -417,7 +424,10 @@ def main():
                     conn.close()
         time.sleep(1)
 if __name__ == "__main__":
-
+    var = "37.83 < 11.76"
+    print(eval(var))
+    if (eval(var)):
+        print("anomalies detected")
     main()
 
 
