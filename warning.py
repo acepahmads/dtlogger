@@ -381,25 +381,37 @@ def main():
                                             max1 = eval(row[7])
                                             max = eval(max1)
                                         print("min", min, "max", max, eval(str(eval(row[3]))))
-                                        if (eval(str(eval(row[3])))):
-                                            print("float(value)", float(value), "min", min)
+                                        lastvalue = value
+                                        if (min > 0):
                                             value = float(value) + min
-                                            print("valuemin", value, eval(row[3]))
+                                            print("value + min_tolerance", value, eval(row[3]))
                                             if (eval(str(eval(row[3])))):
-                                                print("float(value)", float(value), "max", max)
-                                                value = float(value) - max
-                                                print("valuemax", max, eval(row[3]))
-                                                if (eval(str(eval(row[3])))):
-                                                    print(name, "Anomali")
-                                                    if (message1 != ""):
-                                                        message1 += "\n"
-                                                    expression = eval(expression)
-                                                    #locvar = {'value': value, 'expression': eval(expression)}
-                                                    print("expression", expression)
-
-                                                    #result = eval(f'f"{row[5]}"', {}, locvar)
-                                                    #print("result", result)
-                                                    message1 += eval(row[5])
+                                                print(name, "Anomali")
+                                                if (message1 != ""):
+                                                    message1 += "\n"
+                                                expression = eval(expression)
+                                                print("expression", expression)
+                                                message1 += name + str(lastvalue) + "\n"
+                                                message1 += eval(row[5])
+                                        elif (max > 0):
+                                            value = float(value) - max
+                                            print("value - max_tolerance", max, eval(row[3]))
+                                            if (eval(str(eval(row[3])))):
+                                                print(name, "Anomali")
+                                                if (message1 != ""):
+                                                    message1 += "\n"
+                                                expression = eval(expression)
+                                                print("expression", expression)
+                                                message1 += name + str(lastvalue) + "\n"
+                                                message1 += eval(row[5])
+                                        else:
+                                            if (eval(str(eval(row[3])))):
+                                                print(name, "Anomali")
+                                                if (message1 != ""):
+                                                    message1 += "\n"
+                                                expression = eval(expression)
+                                                print("expression", expression)
+                                                message1 += eval(row[5])
                                     else:
                                         if (message1 != ""):
                                             message1 += "\n"
