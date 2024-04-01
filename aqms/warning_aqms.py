@@ -187,8 +187,9 @@ def main(site):
 
     while (True):
         now = datetime.datetime.now()
-        print(now)
-        if ((now.minute == 0) and (now.second == 0)):
+        #print(now)
+        if ( ((now.hour == 0) or (now.hour == 12)) and (now.minute == 0) and (now.second == 0)):
+        #if ((now.minute == 0) and (now.second == 0)):
         #if (now.second == 0):
             try:
                 air_pressure = 0.00
@@ -327,11 +328,12 @@ def main(site):
                         if (valuestuck != []):
                             if (check_stuck(valuestuck, row[3])):
                                 print(row[4], "stuck")
-                                if (message1 != ""):
-                                    message1 += ", "
-                                message1 += row[5]
+                                message1 += "\n"
+                                message1 += "[" + row[4] + " " + row[3] + "\n"
+                                message1 += row[5] + "]"
                         else:
-                            message1 += row[4] + " no value"
+                            message1 += "\n"
+                            message1 += "[" + row[4] + " no value" + "]"
                 if conn.is_connected():
                     cursor.close()
                     conn.close()
@@ -355,23 +357,39 @@ def main(site):
                                             max1 = eval(row[7])
                                             max = eval(max1)
                                         print("min", min, "max", max)
-                                        if (eval(row[3])):
-                                            print("float(value)", float(value), "min", min)
+                                        lastvalue = value
+                                        if (min > 0):
                                             value = float(value) + min
-                                            print("valuemin", value)
-                                            if (eval(row[3])):
-                                                print("float(value)", float(value), "max", max)
-                                                value = float(value) - max
-                                                print("valuemax", max)
-                                                if (eval(row[3])):
-                                                    print(name, "Anomali")
-                                                    if (message1 != ""):
-                                                        message1 += "\n"
-                                                    message1 += eval(row[5])
+                                            print("value + min_tolerance", value, eval(row[3]))
+                                            if (eval(str(eval(row[3])))):
+                                                print(name, "Anomali")
+                                                message1 += "\n"
+                                                expression = eval(expression)
+                                                print("expression", expression)
+                                                message1 += "[" + name + " " + str(lastvalue) + " " + row[3] + ")\n"
+                                                message1 += eval(row[5]) + "]"
+                                        elif (max > 0):
+                                            value = float(value) - max
+                                            print("value - max_tolerance", max, eval(row[3]))
+                                            if (eval(str(eval(row[3])))):
+                                                print(name, "Anomali")
+                                                message1 += "\n"
+                                                expression = eval(expression)
+                                                print("expression", expression)
+                                                message1 += "[" + name + " " + str(lastvalue) + " " + row[3] + ")\n"
+                                                message1 += eval(row[5]) + "]"
+                                        else:
+                                            if (eval(str(eval(row[3])))):
+                                                print(name, "Anomali")
+                                                message1 += "\n"
+                                                expression = eval(expression)
+                                                print("expression", expression)
+                                                message1 += "[" + name + " " + str(lastvalue) + " " + row[3] + ")\n"
+                                                message1 += eval(row[5]) + "]"
                                     else:
                                         if (message1 != ""):
-                                            message1 += ", "
-                                        message1 += name + "no value"
+                                            message1 += "\n"
+                                        message1 += name + " no value"
                                     break
                 if (message1 != ""):
                     message = f"{site} [{now}] : " + message1
