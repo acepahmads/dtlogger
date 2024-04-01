@@ -435,10 +435,7 @@ def main():
                     conn.close()
         time.sleep(1)
 if __name__ == "__main__":
-    var = "37.83 < 11.76"
-    print(eval(var))
-    if (eval(var)):
-        print("anomalies detected")
+
     main()
 
 
