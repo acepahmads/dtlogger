@@ -1,4 +1,4 @@
-cd ~/dtlogger
+cd /home/cbi/dtlogger
 echo "cbipa55word" | sudo -S killall modbuss1.1
 echo "cbipa55word" | sudo -S ./modbuss1.1 2024 1000000 & >/dev/null
 
