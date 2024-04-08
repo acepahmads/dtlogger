@@ -47,6 +47,8 @@ fi
 
 printf "\n"
 if [[ $selected_module != "invalid module" ]]; then
+  echo "stopping modbus"
+  killmodbus
   cd ~
   echo "remove folder dtlogger"
   rm -fr dtlogger
