@@ -108,8 +108,8 @@ def check_waiting(conn, site, sQuery, h_hour, msg, fromd, to):
         cursor = conn.cursor()
         cursor.execute(sQuery)
         cursor.fetchall()
-        rows = cursor.rowcount
-        print("message waiting checking : ", rows)
+        count = cursor.rowcount
+        print("message waiting checking : ", count)
         if (rows > 0):
             message = f"{site} [{to}] : " + eval(msg)
             send_warning_tele(message)
@@ -177,7 +177,7 @@ def main():
 
         now = datetime.datetime.now()
         message = f"{site} [{now}] : The system is started"
-        #send_warning_tele(message)
+        send_warning_tele(message)
     except mysql.connector.Error as e:
         print("Error while connecting to MySQL", e)
         send_udp_log("warning#" + "E connecting to MySQL" + str(e))
