@@ -110,7 +110,7 @@ def check_waiting(conn, site, sQuery, h_hour, msg, fromd, to):
         cursor.fetchall()
         count = cursor.rowcount
         print("message waiting checking : ", count)
-        if (rows > 0):
+        if (count > 0):
             message = f"{site} [{to}] : " + eval(msg)
             send_warning_tele(message)
     except Exception as e:
