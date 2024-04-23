@@ -10,7 +10,7 @@ database = 'wqms_onlimo'
 user = 'cbi'
 password = 'cbipa55word'
 data_dict = {"test": ""}
-data_dict1 = {"test1": ""}
+data_dict1 = {"test2": ""}
 def send_udp_log(message):
     try:
         import socket
