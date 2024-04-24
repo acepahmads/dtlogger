@@ -75,7 +75,7 @@ if [[ $selected_module != "invalid module" ]]; then
     echo "update models.py to ~/app/instrumen/datalogger/models/"
     cd ~/dtlogger/config/
     echo "create table warning"
-    mysql -ucbi -pcbipa55word wqms_onlimo < datalogger_config_warning.sql
+    mysql -ucbi -p$password wqms_onlimo < datalogger_config_warning.sql
     cp -f telegram_wqms.txt telegram.txt
   elif [ $selected_module == "aqms" ];
   then
@@ -90,7 +90,7 @@ if [[ $selected_module != "invalid module" ]]; then
     cp -f ~/dtlogger/aqms/datalogger_config_warning_aqms.sql ~/dtlogger/config/datalogger_config_warning.sql
     cd ~/dtlogger/config/
     echo "create table warning"
-    mysql -ucbi -pcbipa55word aqms < datalogger_config_warning.sql    
+    mysql -ucbi -p$password aqms < datalogger_config_warning.sql    
     cp -f telegram_aqms.txt telegram.txt
   else
     echo "no module found"
